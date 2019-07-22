@@ -1,9 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
+
+void error(char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    exit(1);
+}
 
 int main(int argc, char **argv) {
     if (argc != 2) {
-        fprintf(stderr, "引数の個数が間違っています。\n");
+        error("引数の個数が間違っています。");
         return 1;
     }
 
@@ -24,7 +33,7 @@ int main(int argc, char **argv) {
         } else if (p[0] == '\0') {
             break;
         } else {
-            fprintf(stderr, "不正な式です。\n");
+            error("不正な式です。\n");
             return 1;
         }
     }
