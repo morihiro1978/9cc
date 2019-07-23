@@ -26,10 +26,27 @@ struct Token {
 /* 現在のトークン */
 static Token *token = NULL;
 
+/* 入力プログラム */
+static const char *user_input = NULL;
+
 /* エラー出力関数 */
 static void error(char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    exit(1);
+}
+
+/* エラー箇所を報告する */
+static void error_at(const char *exp, char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+
+    int pos = exp - user_input;
+    fprintf(stderr, "%s\n", user_input);
+    fprintf(stderr, "%*s", pos, "");
+    fprintf(stderr, "^ ");
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
     exit(1);
@@ -116,7 +133,7 @@ static void tokenize(char *exp) {
         }
         // 未知のトークン
         else {
-            error("トークナイズできません。");
+            error_at(exp, "トークナイズできません。");
         }
     }
     token = head.list.next;
@@ -127,7 +144,7 @@ static void tokenize(char *exp) {
  */
 static bool consume(char mark) {
     if (token->kind != TK_RESERVED) {
-        error("\"%s\" は記号ではありません。", token->str);
+        error_at(token->str, "記値ではありません");
     } else if (token->str[0] != mark) {
         return false;
     } else {
@@ -141,7 +158,7 @@ static bool consume(char mark) {
  */
 static int expect_number(void) {
     if (token->kind != TK_NUM) {
-        error("\"%s\" は数値ではありません。", token->str);
+        error_at(token->str, "数値ではありません");
     }
     int num = token->num;
     token = token->list.next;
@@ -161,6 +178,9 @@ int main(int argc, char **argv) {
         error("引数の個数が間違っています。");
         return 1;
     }
+
+    // 式
+    user_input = argv[1];
 
     // トークナイズする
     tokenize(argv[1]);
