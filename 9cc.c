@@ -36,6 +36,7 @@ typedef enum {
     ND_ADD,  // +
     ND_SUB,  // -
     ND_MUL,  // *
+    ND_DIV,  // /
     ND_NUM   // 整数
 } NodeKind;
 
@@ -115,6 +116,7 @@ static bool is_exp_reserved(const char c) {
     case '+':  // fall down
     case '-':  // fall down
     case '*':  // fall down
+    case '/':  // fall down
     case '(':  // fall down
     case ')':  // fall down
         return true;
@@ -248,6 +250,8 @@ static Node *mul(void) {
     while (1) {
         if (consume('*') == true) {
             node = new_node(ND_MUL, node, term());
+        } else if (consume('/') == true) {
+            node = new_node(ND_DIV, node, term());
         } else {
             break;
         }
@@ -297,6 +301,10 @@ static void gen(Node *node) {
         break;
     case ND_MUL:
         printf("    imul rax, rdi\n");
+        break;
+    case ND_DIV:
+        printf("    cqo\n");
+        printf("    idiv rdi\n");
         break;
     default:
         error("未定義のノードです。");
