@@ -5,6 +5,11 @@
   "C_Cpp.clang_format_style": "{BasedOnStyle: Google, IndentWidth: 4, IndentCaseLabels: false, AllowShortFunctionsOnASingleLine: Empty, Standard: C++11}",
   "editor.formatOnSave": true,
   "cSpell.words": [
-    "noprefix"
+    "idiv",
+    "movzb",
+    "noprefix",
+    "sete",
+    "setle",
+    "setne"
   ],
 }
