@@ -1,5 +1,6 @@
 /* BNF:
-   expr = num ("+" num | "-" num)*
+   expr = term ("+" term | "-" term)*
+   term = num | "(" expr ")"
  */
 #include <ctype.h>
 #include <stdarg.h>
@@ -108,10 +109,14 @@ static void print_token_list(const Token *head) {
 
 /* 文字が記号か？ */
 static bool is_exp_reserved(const char c) {
-    if ((c != '+') && (c != '-')) {
-        return false;
+    switch (c) {
+    case '+':  // fall down
+    case '-':  // fall down
+    case '(':  // fall down
+    case ')':  // fall down
+        return true;
     }
-    return true;
+    return false;
 }
 
 /* 文字列から新しいトークンを作成し、cur リストに追加する */
@@ -159,16 +164,22 @@ static void tokenize(char *exp) {
 }
 
 /* トークンが指定の記号なら true を返し、トークンを進める。
-   違っていたらパニックする。
+   別の記号なら false を返す。
  */
 static bool consume(char mark) {
-    if (token->kind != TK_RESERVED) {
-        error_at(token->str, "記値ではありません");
-    } else if (token->str[0] != mark) {
+    if ((token->kind != TK_RESERVED) || (token->str[0] != mark)) {
         return false;
-    } else {
-        token = token->list.next;
-        return true;
+    }
+    token = token->list.next;
+    return true;
+}
+
+/* トークンが指定の記号なら、トークンを進める。
+   違っていたらパニックする。
+*/
+static void expect(char mark) {
+    if (consume(mark) == false) {
+        error_at(token->str, "予期せぬトークンです");
     }
 }
 
@@ -216,19 +227,28 @@ static Node *num(void) {
     return new_node_num(expect_number());
 }
 
+/* パーサ: term */
+static Node *expr(void);
+static Node *term(void) {
+    if (consume('(') == true) {
+        Node *node = expr();
+        expect(')');
+        return node;
+    }
+    return num();
+}
+
 /* パーサ: expr */
 static Node *expr(void) {
-    Node *node = num();
+    Node *node = term();
 
     while (1) {
-        if (eof() == true) {
-            break;
-        } else if (consume('+') == true) {
-            node = new_node(ND_ADD, node, num());
+        if (consume('+') == true) {
+            node = new_node(ND_ADD, node, term());
         } else if (consume('-') == true) {
-            node = new_node(ND_SUB, node, num());
+            node = new_node(ND_SUB, node, term());
         } else {
-            error("未知のノードです。");
+            break;
         }
     }
     return node;
