@@ -55,14 +55,14 @@ static void error_at(const char *exp, char *fmt, ...) {
 /* トークンの種類を文字列に変換する */
 static const char *tokenKind_to_str(TokenKind kind) {
     switch (kind) {
-        case TK_RESERVED:
-            return "TK_RESERVED";
-        case TK_NUM:
-            return "TK_NUM";
-        case TK_EOF:
-            return "TK_EOF";
-        default:
-            return "Undefiend";
+    case TK_RESERVED:
+        return "TK_RESERVED";
+    case TK_NUM:
+        return "TK_NUM";
+    case TK_EOF:
+        return "TK_EOF";
+    default:
+        return "Undefiend";
     }
 }
 

@@ -2,7 +2,7 @@
   "terminal.integrated.shell.windows": "C:/Windows/System32/bash.exe",
   "lldb.showDisassembly": "auto",
   "lldb.dereferencePointers": true,
-  "C_Cpp.clang_format_style": "{BasedOnStyle: Google, IndentWidth: 4, Standard: C++11}",
+  "C_Cpp.clang_format_style": "{BasedOnStyle: Google, IndentWidth: 4, IndentCaseLabels: false, AllowShortFunctionsOnASingleLine: Empty, Standard: C++11}",
   "editor.formatOnSave": true,
   "cSpell.words": [
     "noprefix"
