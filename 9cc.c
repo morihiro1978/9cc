@@ -1,5 +1,6 @@
 /* BNF:
-   expr = term ("+" term | "-" term)*
+   expr = mul ("+" mul | "-" mul)*
+   mul  = term ("*" term | "/" term)*
    term = num | "(" expr ")"
  */
 #include <ctype.h>
@@ -34,6 +35,7 @@ static Token *token = NULL;
 typedef enum {
     ND_ADD,  // +
     ND_SUB,  // -
+    ND_MUL,  // *
     ND_NUM   // 整数
 } NodeKind;
 
@@ -112,6 +114,7 @@ static bool is_exp_reserved(const char c) {
     switch (c) {
     case '+':  // fall down
     case '-':  // fall down
+    case '*':  // fall down
     case '(':  // fall down
     case ')':  // fall down
         return true;
@@ -238,15 +241,29 @@ static Node *term(void) {
     return num();
 }
 
-/* パーサ: expr */
-static Node *expr(void) {
+/* パーサ: mul */
+static Node *mul(void) {
     Node *node = term();
 
     while (1) {
+        if (consume('*') == true) {
+            node = new_node(ND_MUL, node, term());
+        } else {
+            break;
+        }
+    }
+    return node;
+}
+
+/* パーサ: expr */
+static Node *expr(void) {
+    Node *node = mul();
+
+    while (1) {
         if (consume('+') == true) {
-            node = new_node(ND_ADD, node, term());
+            node = new_node(ND_ADD, node, mul());
         } else if (consume('-') == true) {
-            node = new_node(ND_SUB, node, term());
+            node = new_node(ND_SUB, node, mul());
         } else {
             break;
         }
@@ -277,6 +294,9 @@ static void gen(Node *node) {
         break;
     case ND_SUB:
         printf("    sub rax, rdi\n");
+        break;
+    case ND_MUL:
+        printf("    imul rax, rdi\n");
         break;
     default:
         error("未定義のノードです。");
