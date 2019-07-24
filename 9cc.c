@@ -1,7 +1,8 @@
 /* BNF:
-   expr = mul ("+" mul | "-" mul)*
-   mul  = term ("*" term | "/" term)*
-   term = num | "(" expr ")"
+   expr  = mul ("+" mul | "-" mul)*
+   mul   = unary ("*" unary | "/" unary)*
+   unary = ("+" | "-")? term
+   term  = num | "(" expr ")"
  */
 #include <ctype.h>
 #include <stdarg.h>
@@ -243,15 +244,26 @@ static Node *term(void) {
     return num();
 }
 
+/* パーサ: unary */
+static Node *unary(void) {
+    if (consume('+') == true) {
+        return term();
+    } else if (consume('-') == true) {
+        return new_node(ND_SUB, new_node_num(0), term());
+    } else {
+        return term();
+    }
+}
+
 /* パーサ: mul */
 static Node *mul(void) {
-    Node *node = term();
+    Node *node = unary();
 
     while (1) {
         if (consume('*') == true) {
-            node = new_node(ND_MUL, node, term());
+            node = new_node(ND_MUL, node, unary());
         } else if (consume('/') == true) {
-            node = new_node(ND_DIV, node, term());
+            node = new_node(ND_DIV, node, unary());
         } else {
             break;
         }
