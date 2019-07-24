@@ -1,3 +1,6 @@
+/* BNF:
+   expr = num ("+" num | "-" num)*
+ */
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -25,6 +28,22 @@ struct Token {
 
 /* 現在のトークン */
 static Token *token = NULL;
+
+/* 抽象構文機のノードの種類 */
+typedef enum {
+    ND_ADD,  // +
+    ND_SUB,  // -
+    ND_NUM   // 整数
+} NodeKind;
+
+/* 抽象構文機のノード */
+typedef struct Node Node;
+struct Node {
+    NodeKind kind;  // ノードの種類
+    Node *lhs;      // 左辺
+    Node *rhs;      // 右辺
+    int num;        // 数値 (kind が ND_NUM の場合のみ有効)
+};
 
 /* 入力プログラム */
 static const char *user_input = NULL;
@@ -173,6 +192,80 @@ static bool eof(void) {
     return true;
 }
 
+/* 2項のノードを作成する */
+struct Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
+    Node *node = calloc(1, sizeof(Node));
+
+    node->kind = kind;
+    node->lhs = lhs;
+    node->rhs = rhs;
+    return node;
+}
+
+/* 数値ノードを作成する */
+struct Node *new_node_num(int num) {
+    Node *node = calloc(1, sizeof(Node));
+
+    node->kind = ND_NUM;
+    node->num = num;
+    return node;
+}
+
+/* パーサ: num */
+static Node *num(void) {
+    return new_node_num(expect_number());
+}
+
+/* パーサ: expr */
+static Node *expr(void) {
+    Node *node = num();
+
+    while (1) {
+        if (eof() == true) {
+            break;
+        } else if (consume('+') == true) {
+            node = new_node(ND_ADD, node, num());
+        } else if (consume('-') == true) {
+            node = new_node(ND_SUB, node, num());
+        } else {
+            error("未知のノードです。");
+        }
+    }
+    return node;
+}
+
+/* パース */
+static Node *parse(void) {
+    return expr();
+}
+
+/* 抽象構文木を下りながらコードを生成 */
+static void gen(Node *node) {
+    if (node->kind == ND_NUM) {
+        printf("    push %d\n", node->num);
+        return;
+    }
+    gen(node->lhs);
+    gen(node->rhs);
+
+    printf("    pop rdi\n");
+    printf("    pop rax\n");
+
+    switch (node->kind) {
+    case ND_ADD:
+        printf("    add rax, rdi\n");
+        break;
+    case ND_SUB:
+        printf("    sub rax, rdi\n");
+        break;
+    default:
+        error("未定義のノードです。");
+        break;
+    }
+
+    printf("    push rax\n");
+}
+
 int main(int argc, char **argv) {
     if (argc != 2) {
         error("引数の個数が間違っています。");
@@ -186,26 +279,19 @@ int main(int argc, char **argv) {
     tokenize(argv[1]);
     // print_token_list(token);
 
+    // パース
+    Node *node = parse();
+
     // アセンブリの前半を出力
     printf(".intel_syntax noprefix\n");
     printf(".global main\n");
     printf("main:\n");
 
-    // 式は数値で始まる
-    printf("    mov rax, %d\n", expect_number());
+    // 抽象構文木を下りながらコードを生成
+    gen(node);
 
-    // 残りの式を評価
-    while (eof() == false) {
-        if (consume('+') == true) {
-            printf("    add rax, %d\n", expect_number());
-        } else if (consume('-') == true) {
-            printf("    sub rax, %d\n", expect_number());
-        } else {
-            error("不正な式です。\n");
-            return 1;
-        }
-    }
+    // スタックの一番上に式全体の結果が残っているので、それを戻り値とする
+    printf("    pop rax\n");
     printf("    ret\n");
-
     return 0;
 }
