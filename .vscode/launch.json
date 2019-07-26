@@ -9,7 +9,7 @@
     "request": "launch",
     // "program": "${workspaceFolder}/9cc",
     "program": "/mnt/c/program/9cc/9cc",
-    "args": ["5+20-4"],
+    "args": ["5+20-4\\;"],
     "stopAtEntry": false,
     // "cwd": "${workspaceFolder}",
     "cwd": "/mnt/c/program/9cc",

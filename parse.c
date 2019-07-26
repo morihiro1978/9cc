@@ -1,4 +1,5 @@
 /* BNF:
+   stmt       = expr ";"
    expr       = assign
    assign     = equality ("=" assign)?
    equality   = relational ("==" relational | "!=" relational)*
@@ -67,6 +68,7 @@ static bool is_exp_reserved1(const char c) {
     case '>':  // fall down
     case '<':  // fall down
     case '=':  // fall down
+    case ';':  // fall down
         return true;
     }
     return false;
@@ -345,7 +347,14 @@ static Node *expr(void) {
     return assign();
 }
 
+/* パーサ: stmt */
+static Node *stmt(void) {
+    Node *node = expr();
+    expect(";");
+    return node;
+}
+
 /* パース */
 Node *parse(void) {
-    return expr();
+    return stmt();
 }
