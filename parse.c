@@ -1,11 +1,15 @@
 /* BNF:
-   expr       = equality
+   expr       = assign
+   assign     = equality ("=" assign)?
    equality   = relational ("==" relational | "!=" relational)*
    relational = add ("<" add | "<=" add | ">" add | ">=" add)*
    add        = mul ("+" mul | "-" mul)*
    mul        = unary ("*" unary | "/" unary)*
    unary      = ("+" | "-")? term
-   term       = num | "(" expr ")"
+   term       = num | var | "(" expr ")"
+   var        = "a" ～ "z"
+   num        = int ("0" | int)*
+   int        = "1" ～ "9"
  */
 #include "9cc.h"
 
@@ -62,6 +66,7 @@ static bool is_exp_reserved1(const char c) {
     case ')':  // fall down
     case '>':  // fall down
     case '<':  // fall down
+    case '=':  // fall down
         return true;
     }
     return false;
@@ -75,6 +80,14 @@ static bool is_exp_reserved2(const char *exp) {
         if (memcmp(marks[i], exp, 2) == 0) {
             return true;
         }
+    }
+    return false;
+}
+
+/* 文字が変数か */
+static bool is_exp_variable(const char c) {
+    if (('a' <= c) && (c <= 'z')) {
+        return true;
     }
     return false;
 }
@@ -116,6 +129,11 @@ void tokenize(char *exp) {
             cur = new_token(TK_RESERVED, exp, 1, cur);
             exp += 1;
         }
+        // 変数
+        else if (is_exp_variable(exp[0]) == true) {
+            cur = new_token(TK_VAR, exp, 1, cur);
+            exp += 1;
+        }
         // 数値
         else if (isdigit(exp[0])) {
             cur = new_token(TK_NUM, exp, 0, cur);
@@ -140,6 +158,18 @@ static bool consume(const char *op) {
     }
     token = token->list.next;
     return true;
+}
+
+/* トークンが変数ならそのトークンを返し、トークンを進める。
+   違っていたら NULL を返す。
+*/
+static Token *consume_variable(void) {
+    if (token->kind != TK_VAR) {
+        return NULL;
+    }
+    Token *cur = token;
+    token = token->list.next;
+    return cur;
 }
 
 /* トークンが指定の記号なら、トークンを進める。
@@ -195,6 +225,15 @@ static Node *num(void) {
     return new_node_num(expect_number());
 }
 
+/* パーサ: var */
+static Node *var(char var) {
+    Node *node = calloc(1, sizeof(Node));
+
+    node->kind = ND_LVAR;
+    node->num = (var - 'a' + 1) * 8U;
+    return node;
+}
+
 /* パーサ: term */
 static Node *expr(void);
 static Node *term(void) {
@@ -202,8 +241,14 @@ static Node *term(void) {
         Node *node = expr();
         expect(")");
         return node;
+    } else {
+        Token *tok = consume_variable();
+        if (tok != NULL) {
+            return var(tok->str[0]);
+        } else {
+            return num();
+        }
     }
-    return num();
 }
 
 /* パーサ: unary */
@@ -285,9 +330,19 @@ static Node *equality(void) {
     return node;
 }
 
+/* パーサ: assign */
+static Node *assign(void) {
+    Node *node = equality();
+
+    if (consume("=") == true) {
+        node = new_node(ND_ASSIGN, node, assign());
+    }
+    return node;
+}
+
 /* パーサ: expr */
 static Node *expr(void) {
-    return equality();
+    return assign();
 }
 
 /* パース */

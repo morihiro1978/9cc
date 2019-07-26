@@ -21,11 +21,22 @@ int main(int argc, char **argv) {
     printf(".global main\n");
     printf("main:\n");
 
+    // エピローグ
+    // 変数 a ～ z までの領域を確保
+    printf("    push rbp\n");
+    printf("    mov rbp, rsp\n");
+    printf("    sub rsp, 208\n");  // 26 * 8 = 208
+
     // 抽象構文木を下りながらコードを生成
     gen(node);
 
     // スタックの一番上に式全体の結果が残っているので、それを戻り値とする
     printf("    pop rax\n");
+
+    // エピローグ
+    // 最後の式の結果が RAX に残っているので、それを返す
+    printf("    mov rsp, rbp\n");
+    printf("    pop rbp\n");
     printf("    ret\n");
     return 0;
 }

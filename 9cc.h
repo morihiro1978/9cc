@@ -9,6 +9,7 @@
 /* トークンの種類 */
 typedef enum {
     TK_RESERVED,  // 記号
+    TK_VAR,       // 変数
     TK_NUM,       // 整数
     TK_EOF        // EOF
 } TokenKind;
@@ -19,7 +20,8 @@ struct Token {
     TokenKind kind;   // トークンの種類
     const char *str;  // トークン文字列
     int len;          // トークンの長さ
-    int num;          // 数値 (kind が TK_NUM の場合のみ有効)
+    int num;          // 数値: kind が TK_NUM の場合
+                      // オフセット: kind が TK_VAR の場合
     struct {
         Token *next;
     } list;  // リスト
@@ -27,15 +29,17 @@ struct Token {
 
 /* 抽象構文機のノードの種類 */
 typedef enum {
-    ND_ADD,  // +
-    ND_SUB,  // -
-    ND_MUL,  // *
-    ND_DIV,  // /
-    ND_EQ,   // ==
-    ND_NE,   // !=
-    ND_LT,   // <
-    ND_LE,   // <=
-    ND_NUM   // 整数
+    ND_ADD,     // +
+    ND_SUB,     // -
+    ND_MUL,     // *
+    ND_DIV,     // /
+    ND_EQ,      // ==
+    ND_NE,      // !=
+    ND_LT,      // <
+    ND_LE,      // <=
+    ND_NUM,     // 整数
+    ND_ASSIGN,  // 代入
+    ND_LVAR     // 変数
 } NodeKind;
 
 /* 抽象構文機のノード */
