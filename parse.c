@@ -1,4 +1,5 @@
 /* BNF:
+   program    = stmt*
    stmt       = expr ";"
    expr       = assign
    assign     = equality ("=" assign)?
@@ -13,6 +14,9 @@
    int        = "1" ～ "9"
  */
 #include "9cc.h"
+
+/* コード */
+Node *code[MAX_CODE];
 
 /* 現在のトークン */
 static Token *token = NULL;
@@ -354,7 +358,18 @@ static Node *stmt(void) {
     return node;
 }
 
+/* パーサ: program */
+static void program(void) {
+    int i = 0;
+
+    while (eof() == false) {
+        code[i] = stmt();
+        i++;
+    }
+    code[i] = NULL;
+}
+
 /* パース */
-Node *parse(void) {
-    return stmt();
+void parse(void) {
+    program();
 }

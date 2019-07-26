@@ -54,6 +54,10 @@ struct Node {
 /* 入力プログラム */
 extern const char *user_input;
 
+/* コード */
+#define MAX_CODE (10)
+extern Node *code[MAX_CODE];
+
 /* エラー出力関数 */
 void error(char *fmt, ...);
 
@@ -64,7 +68,7 @@ void error_at(const char *exp, char *fmt, ...);
 void tokenize(char *exp);
 
 /* パース */
-Node *parse(void);
+void parse(void);
 
 /* 抽象構文木を下りながらコードを生成 */
 void gen(Node *node);

@@ -71,7 +71,7 @@ try 24 "x=2*10+4;"
 try 25 "y=2*10+5;"
 try 26 "z=2*10+6;"
 try 0 "a=b=c=d=e=f=g=h=i=j=k=l=m=n=o=p=q=r=s=t=u=v=w=x=y=z=0;"
-try 1 "a=b+1;"
-try 1 "a=(b+1)*c;"
+try 3 "a=1; b=a+2;"
+try 18 "a = b = 3; c = a * a + b * b;"
 
 echo OK

@@ -6,15 +6,10 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // 式
+    // 式をトークナイズしてパースする
     user_input = argv[1];
-
-    // トークナイズする
     tokenize(argv[1]);
-    // print_token_list(token);
-
-    // パース
-    Node *node = parse();
+    parse();
 
     // アセンブリの前半を出力
     printf(".intel_syntax noprefix\n");
@@ -27,11 +22,14 @@ int main(int argc, char **argv) {
     printf("    mov rbp, rsp\n");
     printf("    sub rsp, 208\n");  // 26 * 8 = 208
 
-    // 抽象構文木を下りながらコードを生成
-    gen(node);
+    // 全ての式を処理
+    for (int i = 0; code[i] != NULL; i++) {
+        // 抽象構文木を下りながらコードを生成
+        gen(code[i]);
 
-    // スタックの一番上に式全体の結果が残っているので、それを戻り値とする
-    printf("    pop rax\n");
+        // スタックの一番上に式全体の結果が残っているので、それを戻り値とする
+        printf("    pop rax\n");
+    }
 
     // エピローグ
     // 最後の式の結果が RAX に残っているので、それを返す
