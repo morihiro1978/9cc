@@ -105,10 +105,15 @@ static int is_exp_reserved(const char *exp) {
    変数でなければ 0 を返す。
  */
 static int is_exp_variable(const char *exp) {
-    if (('a' <= exp[0]) && (exp[0] <= 'z')) {
-        return 1;
+    int i = 0;
+
+    if (isalpha(exp[i]) != 0) {
+        i++;
+        while (isalnum(exp[i]) != 0) {
+            i++;
+        }
     }
-    return 0;
+    return i;
 }
 
 /* 文字列から新しいトークンを作成し、cur リストに追加する */
