@@ -74,5 +74,8 @@ try 0 "a=b=c=d=e=f=g=h=i=j=k=l=m=n=o=p=q=r=s=t=u=v=w=x=y=z=0;"
 try 3 "a=1; b=a+2;"
 try 18 "a = b = 3; c = a * a + b * b; c;"
 try 6 "foo = 1; bar = 2 + 3; ans = foo + bar;"
+try 1 "return 1;"
+try 2 "return 2; return 1;"
+try 6 "foo = 1; bar = 2 + 3; return foo + bar;"
 
 echo OK

@@ -1,6 +1,6 @@
 /* BNF:
    program    = stmt*
-   stmt       = expr ";"
+   stmt       = expr ";" | return expr ";"
    expr       = assign
    assign     = equality ("=" assign)?
    equality   = relational ("==" relational | "!=" relational)*
@@ -9,7 +9,7 @@
    mul        = unary ("*" unary | "/" unary)*
    unary      = ("+" | "-")? term
    term       = num | var | "(" expr ")"
-   var        = ("a" ～ "z") ("a" ～ "z" | "A" ～ "Z" | "0" ～ "9")*
+   var        = ("a" ～ "z") ("a" ～ "z" | "A" ～ "Z" | "0" ～ "9" | "_")*
    num        = int ("0" | int)*
    int        = "1" ～ "9"
  */
@@ -63,6 +63,15 @@ static void print_token_list(const Token *head) {
     }
 }
 
+/* 文字が /[A-Za-z9-0_]/ なら非0 を、違っていたら 0 を返す */
+static int is_alnumubar(int c) {
+    int ret = isalnum(c);
+    if (ret == 0) {
+        ret = c == '_';
+    }
+    return ret;
+}
+
 /* 文字列が空白なら、その文字数を返す。
    空白でなければ 0 を返す。
  */
@@ -100,6 +109,16 @@ static int is_exp_reserved(const char *exp) {
     case '=':  // fall down
     case ';':  // fall down
         return 1;
+    }
+    return 0;
+}
+
+/* 文字列が "return" なら、その文字数を返す。
+   違っていれば 0 を返す。
+ */
+static int is_exp_reserved_return(const char *exp) {
+    if ((memcmp(exp, "return", 6) == 0) && (is_alnumubar(exp[6]) == 0)) {
+        return 6;
     }
     return 0;
 }
@@ -152,6 +171,11 @@ void tokenize(char *exp) {
             cur = new_token(TK_RESERVED, exp, len, cur);
             exp += len;
         }
+        // return
+        else if ((len = is_exp_reserved_return(exp)) > 0) {
+            cur = new_token(TK_RETURN, exp, len, cur);
+            exp += len;
+        }
         // 変数
         else if ((len = is_exp_variable(exp)) > 0) {
             cur = new_token(TK_VAR, exp, len, cur);
@@ -183,11 +207,11 @@ static bool consume(const char *op) {
     return true;
 }
 
-/* トークンが変数ならそのトークンを返し、トークンを進める。
+/* トークンが指定の種類ならそのトークンを返し、トークンを進める。
    違っていたら NULL を返す。
 */
-static Token *consume_variable(void) {
-    if (token->kind != TK_VAR) {
+static Token *consume_with_kind(TokenKind kind) {
+    if (token->kind != kind) {
         return NULL;
     }
     Token *cur = token;
@@ -290,7 +314,7 @@ static Node *term(void) {
         expect(")");
         return node;
     } else {
-        Token *tok = consume_variable();
+        Token *tok = consume_with_kind(TK_VAR);
         if (tok != NULL) {
             return var(tok);
         } else {
@@ -395,8 +419,14 @@ static Node *expr(void) {
 
 /* パーサ: stmt */
 static Node *stmt(void) {
-    Node *node = expr();
-    expect(";");
+    Node *node = NULL;
+    if (consume_with_kind(TK_RETURN) != NULL) {
+        node = new_node(ND_RETURN, NULL, expr());
+        expect(";");
+    } else {
+        node = expr();
+        expect(";");
+    }
     return node;
 }
 

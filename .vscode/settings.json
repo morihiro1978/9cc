@@ -5,6 +5,7 @@
   "C_Cpp.clang_format_style": "{BasedOnStyle: Google, IndentWidth: 4, IndentCaseLabels: false, AllowShortFunctionsOnASingleLine: Empty, AlwaysBreakBeforeMultilineStrings: false, BinPackArguments: false, BreakBeforeBinaryOperators: All, Standard: C++11}",
   "editor.formatOnSave": true,
   "cSpell.words": [
+    "alnumubar",
     "idiv",
     "movzb",
     "noprefix",

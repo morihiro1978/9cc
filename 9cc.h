@@ -9,6 +9,7 @@
 /* トークンの種類 */
 typedef enum {
     TK_RESERVED,  // 記号
+    TK_RETURN,    // return
     TK_VAR,       // 変数
     TK_NUM,       // 整数
     TK_EOF        // EOF
@@ -36,6 +37,7 @@ typedef enum {
     ND_LE,      // <=
     ND_NUM,     // 整数
     ND_ASSIGN,  // 代入
+    ND_RETURN,  // return
     ND_LVAR     // 変数
 } NodeKind;
 
