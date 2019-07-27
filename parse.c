@@ -38,17 +38,17 @@ static const char *tokenKind_to_str(TokenKind kind) {
 /* トークンを表示する */
 static void print_token(const Token *tok) {
     printf("Token: 0x%08lx\n"
-           " .kind     : %s\n"
-           " .str      : %s\n"
-           " .len      : %d\n"
-           " .num      : %d\n"
-           " .list.next: 0x%08lx\n",
+           " .kind : %s\n"
+           " .str  : %s\n"
+           " .len  : %d\n"
+           " .num  : %d\n"
+           " .next : 0x%08lx\n",
            (uintptr_t)tok,
            tokenKind_to_str(tok->kind),
            tok->str,
            tok->len,
            tok->num,
-           (uintptr_t)tok->list.next);
+           (uintptr_t)tok->next);
 }
 
 /* トークンリストを表示する */
@@ -56,7 +56,7 @@ static void print_token_list(const Token *head) {
     Token *tok = (Token *)head;
     while (tok != NULL) {
         print_token(tok);
-        tok = tok->list.next;
+        tok = tok->next;
     }
 }
 
@@ -123,14 +123,14 @@ static Token *new_token(TokenKind kind, const char *exp, int len, Token *cur) {
     tok->kind = kind;
     tok->str = exp;
     tok->len = len;
-    cur->list.next = tok;
+    cur->next = tok;
     return tok;
 }
 
 /* トークナイズする */
 void tokenize(char *exp) {
     Token head;
-    head.list.next = NULL;
+    head.next = NULL;
     Token *cur = &head;
     int len;
 
@@ -165,7 +165,7 @@ void tokenize(char *exp) {
             error_at(exp, "トークナイズできません。");
         }
     }
-    token = head.list.next;
+    token = head.next;
 }
 
 /* トークンが指定の記号なら true を返し、トークンを進める。
@@ -176,7 +176,7 @@ static bool consume(const char *op) {
         || (memcmp(op, token->str, token->len) != 0)) {
         return false;
     }
-    token = token->list.next;
+    token = token->next;
     return true;
 }
 
@@ -188,7 +188,7 @@ static Token *consume_variable(void) {
         return NULL;
     }
     Token *cur = token;
-    token = token->list.next;
+    token = token->next;
     return cur;
 }
 
@@ -209,7 +209,7 @@ static int expect_number(void) {
         error_at(token->str, "数値ではありません");
     }
     int num = token->num;
-    token = token->list.next;
+    token = token->next;
     return num;
 }
 
@@ -246,11 +246,11 @@ static Node *num(void) {
 }
 
 /* パーサ: var */
-static Node *var(char var) {
+static Node *var(const Token *tok) {
     Node *node = calloc(1, sizeof(Node));
 
     node->kind = ND_LVAR;
-    node->num = (var - 'a' + 1) * 8U;
+    node->offset = (tok->str[0] - 'a' + 1) * 8U;
     return node;
 }
 
@@ -264,7 +264,7 @@ static Node *term(void) {
     } else {
         Token *tok = consume_variable();
         if (tok != NULL) {
-            return var(tok->str[0]);
+            return var(tok);
         } else {
             return num();
         }

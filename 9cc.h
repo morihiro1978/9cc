@@ -21,10 +21,7 @@ struct Token {
     const char *str;  // トークン文字列
     int len;          // トークンの長さ
     int num;          // 数値: kind が TK_NUM の場合
-                      // オフセット: kind が TK_VAR の場合
-    struct {
-        Token *next;
-    } list;  // リスト
+    Token *next;      // リスト
 };
 
 /* 抽象構文機のノードの種類 */
@@ -49,6 +46,7 @@ struct Node {
     Node *lhs;      // 左辺
     Node *rhs;      // 右辺
     int num;        // 数値 (kind が ND_NUM の場合のみ有効)
+    int offset;  // ベースポインタからのオフセット: kind が TK_VAR の場合
 };
 
 /* 入力プログラム */
