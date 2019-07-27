@@ -17,10 +17,10 @@ int main(int argc, char **argv) {
     printf("main:\n");
 
     // エピローグ
-    // 変数 a ～ z までの領域を確保
+    // 変数の領域を確保
     printf("    push rbp\n");
     printf("    mov rbp, rsp\n");
-    printf("    sub rsp, 208\n");  // 26 * 8 = 208
+    printf("    sub rsp, %d\n", locals == NULL ? 0 : locals->offset);
 
     // 全ての式を処理
     for (int i = 0; code[i] != NULL; i++) {

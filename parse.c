@@ -9,7 +9,7 @@
    mul        = unary ("*" unary | "/" unary)*
    unary      = ("+" | "-")? term
    term       = num | var | "(" expr ")"
-   var        = "a" ～ "z"
+   var        = ("a" ～ "z") ("a" ～ "z" | "A" ～ "Z" | "0" ～ "9")*
    num        = int ("0" | int)*
    int        = "1" ～ "9"
  */
@@ -20,6 +20,9 @@ Node *code[MAX_CODE];
 
 /* 現在のトークン */
 static Token *token = NULL;
+
+/* ローカル変数のリスト */
+LVar *locals = NULL;
 
 /* トークンの種類を文字列に変換する */
 static const char *tokenKind_to_str(TokenKind kind) {
@@ -221,6 +224,21 @@ static bool eof(void) {
     return true;
 }
 
+/* tok に一致するローカル変数があれば、その情報を返す。
+   なければ NULL を返す。
+ */
+static LVar *find_local(const Token *tok) {
+    LVar *var = locals;
+    while (var != NULL) {
+        if ((tok->len == var->len)
+            && (memcmp(tok->str, var->name, var->len) == 0)) {
+            break;
+        }
+        var = var->next;
+    }
+    return var;
+}
+
 /* 2項のノードを作成する */
 struct Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
     Node *node = calloc(1, sizeof(Node));
@@ -249,8 +267,18 @@ static Node *num(void) {
 static Node *var(const Token *tok) {
     Node *node = calloc(1, sizeof(Node));
 
+    LVar *var = find_local(tok);
+    if (var == NULL) {
+        var = calloc(1, sizeof(LVar));
+        var->name = (char *)tok->str;
+        var->len = tok->len;
+        var->offset = locals == NULL ? 8 : locals->offset + 8;
+        var->next = locals;
+        locals = var;
+    }
+
     node->kind = ND_LVAR;
-    node->offset = (tok->str[0] - 'a' + 1) * 8U;
+    node->offset = var->offset;
     return node;
 }
 

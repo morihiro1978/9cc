@@ -49,8 +49,20 @@ struct Node {
     int offset;  // ベースポインタからのオフセット: kind が TK_VAR の場合
 };
 
+/* ローカル変数の型 */
+typedef struct LVar LVar;
+struct LVar {
+    char *name;  // 変数の名前
+    int len;     // 名前の長さ
+    int offset;  // RBPからのオフセット
+    LVar *next;  // 次の変数かNULL
+};
+
 /* 入力プログラム */
 extern const char *user_input;
+
+/* ローカル変数のリスト */
+extern LVar *locals;
 
 /* コード */
 #define MAX_CODE (10)
