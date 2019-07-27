@@ -60,9 +60,32 @@ static void print_token_list(const Token *head) {
     }
 }
 
-/* 文字が1文字の記号か？ */
-static bool is_exp_reserved1(const char c) {
-    switch (c) {
+/* 文字列が空白なら、その文字数を返す。
+   空白でなければ 0 を返す。
+ */
+static int is_exp_space(const char *exp) {
+    int i = 0;
+    while (isspace(exp[i]) != 0) {
+        i++;
+    }
+    return i;
+}
+
+/* 文字列が記号なら、その文字数を返す。
+   記号でなければ 0 を返す。
+ */
+static int is_exp_reserved(const char *exp) {
+    const char *marks[] = {"<=", ">=", "==", "!="};
+
+    // 2文字
+    for (int i = 0; i < sizeof(marks) / sizeof(char *); i++) {
+        if (memcmp(marks[i], exp, 2) == 0) {
+            return 2;
+        }
+    }
+
+    // 1文字
+    switch (exp[0]) {
     case '+':  // fall down
     case '-':  // fall down
     case '*':  // fall down
@@ -73,29 +96,19 @@ static bool is_exp_reserved1(const char c) {
     case '<':  // fall down
     case '=':  // fall down
     case ';':  // fall down
-        return true;
+        return 1;
     }
-    return false;
+    return 0;
 }
 
-/* 文字が2文字の記号か？ */
-static bool is_exp_reserved2(const char *exp) {
-    const char *marks[] = {"<=", ">=", "==", "!="};
-
-    for (int i = 0; i < sizeof(marks) / sizeof(char *); i++) {
-        if (memcmp(marks[i], exp, 2) == 0) {
-            return true;
-        }
+/* 文字列が変数なら、その文字数を返す。
+   変数でなければ 0 を返す。
+ */
+static int is_exp_variable(const char *exp) {
+    if (('a' <= exp[0]) && (exp[0] <= 'z')) {
+        return 1;
     }
-    return false;
-}
-
-/* 文字が変数か */
-static bool is_exp_variable(const char c) {
-    if (('a' <= c) && (c <= 'z')) {
-        return true;
-    }
-    return false;
+    return 0;
 }
 
 /* 文字列から新しいトークンを作成し、cur リストに追加する */
@@ -114,6 +127,7 @@ void tokenize(char *exp) {
     Token head;
     head.list.next = NULL;
     Token *cur = &head;
+    int len;
 
     while (1) {
         // EOF
@@ -122,27 +136,22 @@ void tokenize(char *exp) {
             break;
         }
         // 空白をスキップ
-        else if (isspace(exp[0]) != 0) {
-            exp += 1;
+        else if ((len = is_exp_space(exp)) > 0) {
+            exp += len;
         }
-        // 予約後(2文字)
-        else if (is_exp_reserved2(exp) == true) {
-            cur = new_token(TK_RESERVED, exp, 2, cur);
-            exp += 2;
-        }
-        // 予約後(1文字)
-        else if (is_exp_reserved1(exp[0]) == true) {
-            cur = new_token(TK_RESERVED, exp, 1, cur);
-            exp += 1;
+        // 予約後
+        else if ((len = is_exp_reserved(exp)) > 0) {
+            cur = new_token(TK_RESERVED, exp, len, cur);
+            exp += len;
         }
         // 変数
-        else if (is_exp_variable(exp[0]) == true) {
-            cur = new_token(TK_VAR, exp, 1, cur);
-            exp += 1;
+        else if ((len = is_exp_variable(exp)) > 0) {
+            cur = new_token(TK_VAR, exp, len, cur);
+            exp += len;
         }
         // 数値
         else if (isdigit(exp[0])) {
-            cur = new_token(TK_NUM, exp, 0, cur);
+            cur = new_token(TK_NUM, exp, -1, cur);
             cur->num = strtol(exp, &exp, 10);
             cur->len = exp - cur->str;
         }
