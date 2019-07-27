@@ -1,0 +1,8 @@
+#!/bin/bash
+code="$1"
+
+./9cc "$code" > tmp.s
+gcc -o tmp tmp.s
+./tmp
+actual="$?"
+echo $actual
