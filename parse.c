@@ -2,6 +2,7 @@
    program    = stmt*
    stmt       = expr ";"
               | "if" "(" expr ")" stmt ("else" stmt)?
+              | "while" "(" expr ")" stmt
               | return expr ";"
    expr       = assign
    assign     = equality ("=" assign)?
@@ -187,6 +188,11 @@ void tokenize(char *exp) {
         // else
         else if ((len = is_exp_reserved_as(exp, "else")) > 0) {
             cur = new_token(TK_ELSE, exp, len, cur);
+            exp += len;
+        }
+        // while
+        else if ((len = is_exp_reserved_as(exp, "while")) > 0) {
+            cur = new_token(TK_WHILE, exp, len, cur);
             exp += len;
         }
         // 変数
@@ -457,6 +463,11 @@ static Node *stmt(void) {
             else_stmt = stmt();
         }
         node = new_node3(ND_IF, test, then_stmt, else_stmt);
+    } else if (consume_with_kind(TK_WHILE) != NULL) {
+        expect("(");
+        Node *test = expr();
+        expect(")");
+        node = new_node2(ND_WHILE, test, stmt());
     } else {
         node = expr();
         expect(";");

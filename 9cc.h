@@ -11,6 +11,7 @@ typedef enum {
     TK_RESERVED,  // 記号
     TK_IF,        // if
     TK_ELSE,      // else
+    TK_WHILE,     // while
     TK_RETURN,    // return
     TK_VAR,       // 変数
     TK_NUM,       // 整数
@@ -41,6 +42,7 @@ typedef enum {
     ND_ASSIGN,  // 代入
     ND_RETURN,  // return
     ND_IF,      // if-else
+    ND_WHILE,   // while
     ND_LVAR     // 変数
 } NodeKind;
 

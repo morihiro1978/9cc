@@ -15,6 +15,9 @@ static void gen_lvar(Node *node) {
 
 /* 抽象構文木を下りながらコードを生成 */
 void gen(Node *node) {
+    int cnt = label_count;
+    label_count++;
+
     switch (node->kind) {
     case ND_NUM:
         printf("    push %d\n", node->num);
@@ -40,10 +43,7 @@ void gen(Node *node) {
         printf("    pop rbp\n");
         printf("    ret\n");
         return;
-    case ND_IF: {
-        int cnt = label_count;
-        label_count++;
-
+    case ND_IF:
         gen(node->lhs);
         printf("    pop rax\n");
         printf("    cmp rax, 0\n");
@@ -59,7 +59,20 @@ void gen(Node *node) {
             gen(node->rhs);
         }
         printf(".Lend%d:\n", cnt);
-    }
+        return;
+    case ND_WHILE:
+        printf(".Lbegin%d:\n", cnt);
+        gen(node->lhs);
+        printf("    pop rax\n");
+        printf("    cmp rax, 0\n");
+        printf("    je .Lbreak%d\n", cnt);
+        gen(node->rhs);
+        printf("    jmp .Lbegin%d\n", cnt);
+        printf(".Lbreak%d:\n", cnt);
+        // if-thenが実行されなかったときに何もpushしないと、
+        // 次のpopでスタックがアンダーフローするため、ダミーpushする。
+        printf("    push 0\n");
+        printf(".Lend%d:\n", cnt);
         return;
     default:
         break;
