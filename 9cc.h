@@ -9,10 +9,10 @@
 /* トークンの種類 */
 typedef enum {
     TK_RESERVED,  // 記号
+    TK_RETURN,    // return
     TK_IF,        // if
     TK_ELSE,      // else
     TK_WHILE,     // while
-    TK_RETURN,    // return
     TK_VAR,       // 変数
     TK_NUM,       // 整数
     TK_EOF        // EOF
@@ -50,11 +50,36 @@ typedef enum {
 typedef struct Node Node;
 struct Node {
     NodeKind kind;  // ノードの種類
-    Node *lhs;      // 左辺
-    Node *mhs;      // 中辺
-    Node *rhs;      // 右辺
-    int num;        // 数値 (kind が ND_NUM の場合のみ有効)
-    int offset;  // ベースポインタからのオフセット: kind が TK_VAR の場合
+    union {
+        // 数値
+        struct {
+            int val;
+        } num;
+        // 変数
+        struct {
+            int offset;  // ベースポインタからのオフセット
+        } lvar;
+        // 1項演算子
+        struct {
+            Node *expr;
+        } op1;
+        // 2項演算子
+        struct {
+            Node *lhs;  // 左辺
+            Node *rhs;  // 右辺
+        } op2;
+        // if
+        struct {
+            Node *test;
+            Node *tbody;  // then-body
+            Node *ebody;  // else-body
+        } cif;
+        // while
+        struct {
+            Node *test;
+            Node *body;
+        } cwhile;
+    } v;
 };
 
 /* ローカル変数の型 */

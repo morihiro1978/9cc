@@ -6,8 +6,11 @@
   "editor.formatOnSave": true,
   "cSpell.words": [
     "alnumubar",
+    "cwhile",
+    "ebody",
     "idiv",
     "lbegin",
+    "lbreak",
     "lelse",
     "movzb",
     "noprefix",

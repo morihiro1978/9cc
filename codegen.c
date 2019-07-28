@@ -9,7 +9,7 @@ static void gen_lvar(Node *node) {
         error("代入の左辺値が変数ではありません。");
     }
     printf("    mov rax, rbp\n");
-    printf("    sub rax, %d\n", node->offset);
+    printf("    sub rax, %d\n", node->v.lvar.offset);
     printf("    push rax\n");
 }
 
@@ -20,11 +20,11 @@ void gen(Node *node) {
 
     switch (node->kind) {
     case ND_NUM:
-        printf("    push %d\n", node->num);
+        printf("    push %d\n", node->v.num.val);
         return;
     case ND_ASSIGN:
-        gen_lvar(node->lhs);
-        gen(node->rhs);
+        gen_lvar(node->v.op2.lhs);
+        gen(node->v.op2.rhs);
         printf("    pop rdi\n");
         printf("    pop rax\n");
         printf("    mov [rax], rdi\n");
@@ -37,36 +37,36 @@ void gen(Node *node) {
         printf("    push rax\n");
         return;
     case ND_RETURN:
-        gen(node->rhs);
+        gen(node->v.op1.expr);
         printf("    pop rax\n");
         printf("    mov rsp, rbp\n");
         printf("    pop rbp\n");
         printf("    ret\n");
         return;
     case ND_IF:
-        gen(node->lhs);
+        gen(node->v.cif.test);
         printf("    pop rax\n");
         printf("    cmp rax, 0\n");
         printf("    je .Lelse%d\n", cnt);
-        gen(node->mhs);
+        gen(node->v.cif.tbody);
         printf("    jmp .Lend%d\n", cnt);
         printf(".Lelse%d:\n", cnt);
-        if (node->rhs == NULL) {
+        if (node->v.cif.ebody == NULL) {
             // if-thenが実行されなかったときに何もpushしないと、
             // 次のpopでスタックがアンダーフローするため、ダミーpushする。
             printf("    push 0\n");
         } else {
-            gen(node->rhs);
+            gen(node->v.cif.ebody);
         }
         printf(".Lend%d:\n", cnt);
         return;
     case ND_WHILE:
         printf(".Lbegin%d:\n", cnt);
-        gen(node->lhs);
+        gen(node->v.cwhile.test);
         printf("    pop rax\n");
         printf("    cmp rax, 0\n");
         printf("    je .Lbreak%d\n", cnt);
-        gen(node->rhs);
+        gen(node->v.cwhile.body);
         printf("    jmp .Lbegin%d\n", cnt);
         printf(".Lbreak%d:\n", cnt);
         // if-thenが実行されなかったときに何もpushしないと、
@@ -78,9 +78,8 @@ void gen(Node *node) {
         break;
     }
 
-    gen(node->lhs);
-    gen(node->rhs);
-
+    gen(node->v.op2.lhs);
+    gen(node->v.op2.rhs);
     printf("    pop rdi\n");
     printf("    pop rax\n");
 
