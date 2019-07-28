@@ -51,9 +51,13 @@ void gen(Node *node) {
         gen(node->mhs);
         printf("    jmp .Lend%d\n", cnt);
         printf(".Lelse%d:\n", cnt);
-        // if-thenが実行されなかったときに何もpushしないと、
-        // 次のpopでスタックがアンダーフローするため、ダミーpushする。
-        printf("    push 0\n");
+        if (node->rhs == NULL) {
+            // if-thenが実行されなかったときに何もpushしないと、
+            // 次のpopでスタックがアンダーフローするため、ダミーpushする。
+            printf("    push 0\n");
+        } else {
+            gen(node->rhs);
+        }
         printf(".Lend%d:\n", cnt);
     }
         return;

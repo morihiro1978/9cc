@@ -1,7 +1,7 @@
 /* BNF:
    program    = stmt*
    stmt       = expr ";"
-              | "if" "(" expr ")" stmt
+              | "if" "(" expr ")" stmt ("else" stmt)?
               | return expr ";"
    expr       = assign
    assign     = equality ("=" assign)?
@@ -182,6 +182,11 @@ void tokenize(char *exp) {
         // if
         else if ((len = is_exp_reserved_as(exp, "if")) > 0) {
             cur = new_token(TK_IF, exp, len, cur);
+            exp += len;
+        }
+        // else
+        else if ((len = is_exp_reserved_as(exp, "else")) > 0) {
+            cur = new_token(TK_ELSE, exp, len, cur);
             exp += len;
         }
         // 変数
@@ -448,6 +453,9 @@ static Node *stmt(void) {
         expect(")");
         Node *then_stmt = stmt();
         Node *else_stmt = NULL;
+        if (consume_with_kind(TK_ELSE) != NULL) {
+            else_stmt = stmt();
+        }
         node = new_node3(ND_IF, test, then_stmt, else_stmt);
     } else {
         node = expr();
