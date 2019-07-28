@@ -265,7 +265,7 @@ static LVar *find_local(const Token *tok) {
 }
 
 /* 2項のノードを作成する */
-struct Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
+struct Node *new_node2(NodeKind kind, Node *lhs, Node *rhs) {
     Node *node = calloc(1, sizeof(Node));
 
     node->kind = kind;
@@ -329,7 +329,7 @@ static Node *unary(void) {
     if (consume("+") == true) {
         return term();
     } else if (consume("-") == true) {
-        return new_node(ND_SUB, new_node_num(0), term());
+        return new_node2(ND_SUB, new_node_num(0), term());
     } else {
         return term();
     }
@@ -341,9 +341,9 @@ static Node *mul(void) {
 
     while (1) {
         if (consume("*") == true) {
-            node = new_node(ND_MUL, node, unary());
+            node = new_node2(ND_MUL, node, unary());
         } else if (consume("/") == true) {
-            node = new_node(ND_DIV, node, unary());
+            node = new_node2(ND_DIV, node, unary());
         } else {
             break;
         }
@@ -357,9 +357,9 @@ static Node *add(void) {
 
     while (1) {
         if (consume("+") == true) {
-            node = new_node(ND_ADD, node, mul());
+            node = new_node2(ND_ADD, node, mul());
         } else if (consume("-") == true) {
-            node = new_node(ND_SUB, node, mul());
+            node = new_node2(ND_SUB, node, mul());
         } else {
             break;
         }
@@ -373,13 +373,13 @@ static Node *relational(void) {
 
     while (1) {
         if (consume("<") == true) {
-            node = new_node(ND_LT, node, add());
+            node = new_node2(ND_LT, node, add());
         } else if (consume("<=") == true) {
-            node = new_node(ND_LE, node, add());
+            node = new_node2(ND_LE, node, add());
         } else if (consume(">") == true) {
-            node = new_node(ND_LT, add(), node);
+            node = new_node2(ND_LT, add(), node);
         } else if (consume(">=") == true) {
-            node = new_node(ND_LE, add(), node);
+            node = new_node2(ND_LE, add(), node);
         } else {
             break;
         }
@@ -393,9 +393,9 @@ static Node *equality(void) {
 
     while (1) {
         if (consume("==") == true) {
-            node = new_node(ND_EQ, node, relational());
+            node = new_node2(ND_EQ, node, relational());
         } else if (consume("!=") == true) {
-            node = new_node(ND_NE, node, relational());
+            node = new_node2(ND_NE, node, relational());
         } else {
             break;
         }
@@ -408,7 +408,7 @@ static Node *assign(void) {
     Node *node = equality();
 
     if (consume("=") == true) {
-        node = new_node(ND_ASSIGN, node, assign());
+        node = new_node2(ND_ASSIGN, node, assign());
     }
     return node;
 }
@@ -422,7 +422,7 @@ static Node *expr(void) {
 static Node *stmt(void) {
     Node *node = NULL;
     if (consume_with_kind(TK_RETURN) != NULL) {
-        node = new_node(ND_RETURN, NULL, expr());
+        node = new_node2(ND_RETURN, NULL, expr());
         expect(";");
     } else {
         node = expr();
