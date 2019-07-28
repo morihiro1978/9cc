@@ -1,6 +1,8 @@
 /* BNF:
    program    = stmt*
-   stmt       = expr ";" | return expr ";"
+   stmt       = expr ";"
+              | "if" "(" expr ")" stmt
+              | return expr ";"
    expr       = assign
    assign     = equality ("=" assign)?
    equality   = relational ("==" relational | "!=" relational)*
@@ -177,6 +179,11 @@ void tokenize(char *exp) {
             cur = new_token(TK_RETURN, exp, len, cur);
             exp += len;
         }
+        // if
+        else if ((len = is_exp_reserved_as(exp, "if")) > 0) {
+            cur = new_token(TK_IF, exp, len, cur);
+            exp += len;
+        }
         // 変数
         else if ((len = is_exp_variable(exp)) > 0) {
             cur = new_token(TK_VAR, exp, len, cur);
@@ -270,6 +277,17 @@ struct Node *new_node2(NodeKind kind, Node *lhs, Node *rhs) {
 
     node->kind = kind;
     node->lhs = lhs;
+    node->rhs = rhs;
+    return node;
+}
+
+/* 3項のノードを作成する */
+struct Node *new_node3(NodeKind kind, Node *lhs, Node *mhs, Node *rhs) {
+    Node *node = calloc(1, sizeof(Node));
+
+    node->kind = kind;
+    node->lhs = lhs;
+    node->mhs = mhs;
     node->rhs = rhs;
     return node;
 }
@@ -424,6 +442,13 @@ static Node *stmt(void) {
     if (consume_with_kind(TK_RETURN) != NULL) {
         node = new_node2(ND_RETURN, NULL, expr());
         expect(";");
+    } else if (consume_with_kind(TK_IF) != NULL) {
+        expect("(");
+        Node *test = expr();
+        expect(")");
+        Node *then_stmt = stmt();
+        Node *else_stmt = NULL;
+        node = new_node3(ND_IF, test, then_stmt, else_stmt);
     } else {
         node = expr();
         expect(";");

@@ -9,6 +9,7 @@
 /* トークンの種類 */
 typedef enum {
     TK_RESERVED,  // 記号
+    TK_IF,        // if
     TK_RETURN,    // return
     TK_VAR,       // 変数
     TK_NUM,       // 整数
@@ -38,6 +39,7 @@ typedef enum {
     ND_NUM,     // 整数
     ND_ASSIGN,  // 代入
     ND_RETURN,  // return
+    ND_IF,      // if
     ND_LVAR     // 変数
 } NodeKind;
 
@@ -46,6 +48,7 @@ typedef struct Node Node;
 struct Node {
     NodeKind kind;  // ノードの種類
     Node *lhs;      // 左辺
+    Node *mhs;      // 中辺
     Node *rhs;      // 右辺
     int num;        // 数値 (kind が ND_NUM の場合のみ有効)
     int offset;  // ベースポインタからのオフセット: kind が TK_VAR の場合

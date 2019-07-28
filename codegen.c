@@ -1,5 +1,8 @@
 #include "9cc.h"
 
+/* ラベルカウター */
+static int label_count = 0;
+
 /* 変数のコードを生成 */
 static void gen_lvar(Node *node) {
     if (node->kind != ND_LVAR) {
@@ -36,6 +39,23 @@ void gen(Node *node) {
         printf("    mov rsp, rbp\n");
         printf("    pop rbp\n");
         printf("    ret\n");
+        return;
+    case ND_IF: {
+        int cnt = label_count;
+        label_count++;
+
+        gen(node->lhs);
+        printf("    pop rax\n");
+        printf("    cmp rax, 0\n");
+        printf("    je .Lelse%d\n", cnt);
+        gen(node->mhs);
+        printf("    jmp .Lend%d\n", cnt);
+        printf(".Lelse%d:\n", cnt);
+        // if-thenが実行されなかったときに何もpushしないと、
+        // 次のpopでスタックがアンダーフローするため、ダミーpushする。
+        printf("    push 0\n");
+        printf(".Lend%d:\n", cnt);
+    }
         return;
     default:
         break;

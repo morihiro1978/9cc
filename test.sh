@@ -77,5 +77,11 @@ try 6 "foo = 1; bar = 2 + 3; ans = foo + bar;"
 try 1 "return 1;"
 try 2 "return 2; return 1;"
 try 6 "foo = 1; bar = 2 + 3; return foo + bar;"
+try 10 "if (1) return 10; return 20;"
+try 20 "if (0) return 10; return 20;"
+try 20 "if (1) if (0) return 10; return 20;"
+try 10 "if (1) if (1) return 10; return 20;"
+try 100 "ans = 0; var = 10; expt = 10; if (var == expt) ans = 100; return ans;"
+try 0 "ans = 0; var = 10; expt = 20; if (var == expt) ans = 100; return ans;"
 
 echo OK
