@@ -113,12 +113,13 @@ static int is_exp_reserved(const char *exp) {
     return 0;
 }
 
-/* 文字列が "return" なら、その文字数を返す。
+/* 文字列が予約後 ident なら、その文字数を返す。
    違っていれば 0 を返す。
  */
-static int is_exp_reserved_return(const char *exp) {
-    if ((memcmp(exp, "return", 6) == 0) && (is_alnumubar(exp[6]) == 0)) {
-        return 6;
+static int is_exp_reserved_as(const char *exp, const char *ident) {
+    int len = strlen(ident);
+    if ((memcmp(exp, ident, len) == 0) && (is_alnumubar(exp[len]) == 0)) {
+        return len;
     }
     return 0;
 }
@@ -172,7 +173,7 @@ void tokenize(char *exp) {
             exp += len;
         }
         // return
-        else if ((len = is_exp_reserved_return(exp)) > 0) {
+        else if ((len = is_exp_reserved_as(exp, "return")) > 0) {
             cur = new_token(TK_RETURN, exp, len, cur);
             exp += len;
         }
