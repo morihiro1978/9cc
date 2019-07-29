@@ -73,6 +73,23 @@ void gen(Node *node) {
         gen(NULL);  // dummy push
         printf(".Lend%d:\n", cnt);
         return;
+    case ND_FOR:
+        gen(node->v.cfor.init);
+        printf("    pop rax\n");
+        printf(".Lbegin%d:\n", cnt);
+        gen(node->v.cfor.test);
+        printf("    pop rax\n");
+        printf("    cmp rax, 0\n");
+        printf("    je .Lbreak%d\n", cnt);
+        gen(node->v.cfor.body);
+        printf("    pop rax\n");
+        gen(node->v.cfor.update);
+        printf("    pop rax\n");
+        printf("    jmp .Lbegin%d\n", cnt);
+        printf(".Lbreak%d:\n", cnt);
+        gen(NULL);  // dummy push
+        printf(".Lend%d:\n", cnt);
+        return;
     default:
         break;
     }

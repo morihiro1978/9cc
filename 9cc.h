@@ -13,6 +13,7 @@ typedef enum {
     TK_IF,        // if
     TK_ELSE,      // else
     TK_WHILE,     // while
+    TK_FOR,       // for
     TK_VAR,       // 変数
     TK_NUM,       // 整数
     TK_EOF        // EOF
@@ -43,6 +44,7 @@ typedef enum {
     ND_RETURN,  // return
     ND_IF,      // if-else
     ND_WHILE,   // while
+    ND_FOR,     // for
     ND_LVAR     // 変数
 } NodeKind;
 
@@ -79,6 +81,13 @@ struct Node {
             Node *test;
             Node *body;
         } cwhile;
+        // for (init, test, update) body
+        struct {
+            Node *init;
+            Node *test;
+            Node *update;
+            Node *body;
+        } cfor;
     } v;
 };
 

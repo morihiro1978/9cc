@@ -3,6 +3,7 @@
    stmt       = expr ";"
               | "if" "(" expr ")" stmt ("else" stmt)?
               | "while" "(" expr ")" stmt
+              | "for" "(" expr? ";" expr? ";" expr? ")" stmt
               | return expr ";"
    expr       = assign
    assign     = equality ("=" assign)?
@@ -195,6 +196,11 @@ void tokenize(char *exp) {
             cur = new_token(TK_WHILE, exp, len, cur);
             exp += len;
         }
+        // for
+        else if ((len = is_exp_reserved_as(exp, "for")) > 0) {
+            cur = new_token(TK_FOR, exp, len, cur);
+            exp += len;
+        }
         // 変数
         else if ((len = is_exp_variable(exp)) > 0) {
             cur = new_token(TK_VAR, exp, len, cur);
@@ -319,6 +325,18 @@ static Node *new_node_while(Node *test, Node *body) {
     node->kind = ND_WHILE;
     node->v.cwhile.test = test;
     node->v.cwhile.body = body;
+    return node;
+}
+
+/* for 文のノードを作成する */
+static Node *new_node_for(Node *init, Node *test, Node *update, Node *body) {
+    Node *node = calloc(1, sizeof(Node));
+
+    node->kind = ND_FOR;
+    node->v.cfor.init = init;
+    node->v.cfor.test = test;
+    node->v.cfor.update = update;
+    node->v.cfor.body = body;
     return node;
 }
 
@@ -487,6 +505,24 @@ static Node *stmt(void) {
         Node *test = expr();
         expect(")");
         node = new_node_while(test, stmt());
+    } else if (consume_with_kind(TK_FOR) != NULL) {
+        Node *init = NULL;
+        Node *test = NULL;
+        Node *update = NULL;
+        expect("(");
+        if (consume(";") == false) {
+            init = expr();
+            expect(";");
+        }
+        if (consume(";") == false) {
+            test = expr();
+            expect(";");
+        }
+        if (consume(")") == false) {
+            update = expr();
+            expect(")");
+        }
+        node = new_node_for(init, test, update, stmt());
     } else {
         node = expr();
         expect(";");
