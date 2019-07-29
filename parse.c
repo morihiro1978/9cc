@@ -1,6 +1,7 @@
 /* BNF:
    program    = stmt*
    stmt       = expr ";"
+              | "{" stmt* "}"
               | "if" "(" expr ")" stmt ("else" stmt)?
               | "while" "(" expr ")" stmt
               | "for" "(" expr? ";" expr? ";" expr? ")" stmt
@@ -112,6 +113,8 @@ static int is_exp_reserved(const char *exp) {
     case '<':  // fall down
     case '=':  // fall down
     case ';':  // fall down
+    case '{':  // fall down
+    case '}':  // fall down
         return 1;
     }
     return 0;
@@ -349,6 +352,32 @@ static Node *new_node_num(int val) {
     return node;
 }
 
+/* ブロックノードを作成する */
+static Node *new_node_block(void) {
+    Node *node = calloc(1, sizeof(Node));
+
+    node->kind = ND_BLOCK;
+    return node;
+}
+
+/* ブロックノードにノードを追加する */
+static void block_add(Node *block, Node *node) {
+    if (block->kind != ND_BLOCK) {
+        error("ブロックノードではありません。");
+    }
+
+    if (block->v.block.max == block->v.block.num) {
+        block->v.block.max += MAX_CODE;
+        block->v.block.code = (Node **)realloc(
+            block->v.block.code, block->v.block.max * sizeof(Node));
+        if (block->v.block.code == NULL) {
+            error("ブロックノードを %d に拡張できません。", block->v.block.max);
+        }
+    }
+    block->v.block.code[block->v.block.num] = node;
+    block->v.block.num++;
+}
+
 /* パーサ: num */
 static Node *num(void) {
     return new_node_num(expect_number());
@@ -523,6 +552,12 @@ static Node *stmt(void) {
             expect(")");
         }
         node = new_node_for(init, test, update, stmt());
+    } else if (consume("{") == true) {
+        Node *block = new_node_block();
+        while (consume("}") == false) {
+            block_add(block, stmt());
+        }
+        return block;
     } else {
         node = expr();
         expect(";");

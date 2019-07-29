@@ -45,7 +45,8 @@ typedef enum {
     ND_IF,      // if-else
     ND_WHILE,   // while
     ND_FOR,     // for
-    ND_LVAR     // 変数
+    ND_LVAR,    // 変数
+    ND_BLOCK    // ブロック
 } NodeKind;
 
 /* 抽象構文機のノード */
@@ -88,6 +89,12 @@ struct Node {
             Node *update;
             Node *body;
         } cfor;
+        // ブロック
+        struct {
+            Node **code;
+            int max;
+            int num;
+        } block;
     } v;
 };
 

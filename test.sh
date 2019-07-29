@@ -89,5 +89,13 @@ try 0 "i = 10; while (i > 0) i = i - 1; return i;"
 try 10 "a=0; for(i=0; i<10; i=i+1) a=a+1; return a;"
 try 10 "a=0; i=0; for(; i<10; i=i+1) a=a+1; return a;"
 try 10 "i=0; for(; i<10; ) i=i+1; return i;"
+try 10 "a = 0; if (1){ a = 10; }else{ a = 20; } return a;"
+try 20 "a = 0; if (0){ a = 10; }else{ a = 20; } return a;"
+try 0 "i = 10; while (i > 0){ i = i - 1; } return i;"
+try 10 "a=0; for(i=0; i<10; i=i+1){ a=a+1; } return a;"
+try 10 "a=0; i=0; for(; i<10; i=i+1){ a=a+1; } return a;"
+try 10 "i=0; for(; i<10; ){ i=i+1; } return i;"
+try 16 "ans=1; for(i=0; i<4; ){ i=i+1; ans=ans*2; } return ans;"
+try 16 "i=0; ans=1; while(i<4){ i=i+1; ans=ans*2; } return ans;"
 
 echo OK

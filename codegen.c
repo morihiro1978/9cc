@@ -13,6 +13,24 @@ static void gen_lvar(Node *node) {
     printf("    push rax\n");
 }
 
+/* ブロックのコードを生成 */
+static void gen_block(Node *block) {
+    if (block->v.block.num > 0) {
+        int i = 0;
+        while (1) {
+            gen(block->v.block.code[i]);
+            i++;
+            if (i >= block->v.block.num) {
+                break;
+            }
+            // ステートメントごとに、そのステートメントが push した値を pop
+            // する。 しかし、ブロックの最後のステートメントは、次の gen() で
+            // pop される。
+            printf("    pop rax\n");
+        }
+    }
+}
+
 /* 抽象構文木を下りながらコードを生成 */
 void gen(Node *node) {
     if (node == NULL) {
@@ -89,6 +107,9 @@ void gen(Node *node) {
         printf(".Lbreak%d:\n", cnt);
         gen(NULL);  // dummy push
         printf(".Lend%d:\n", cnt);
+        return;
+    case ND_BLOCK:
+        gen_block(node);
         return;
     default:
         break;
