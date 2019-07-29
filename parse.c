@@ -171,7 +171,7 @@ void tokenize(char *exp) {
         else if ((len = is_exp_space(exp)) > 0) {
             exp += len;
         }
-        // 予約後
+        // 予約語
         else if ((len = is_exp_reserved(exp)) > 0) {
             cur = new_token(TK_RESERVED, exp, len, cur);
             exp += len;
@@ -494,12 +494,12 @@ static Node *stmt(void) {
         expect("(");
         Node *test = expr();
         expect(")");
-        Node *then_stmt = stmt();
-        Node *else_stmt = NULL;
+        Node *tbody = stmt();
+        Node *ebody = NULL;
         if (consume_with_kind(TK_ELSE) != NULL) {
-            else_stmt = stmt();
+            ebody = stmt();
         }
-        node = new_node_if(test, then_stmt, else_stmt);
+        node = new_node_if(test, tbody, ebody);
     } else if (consume_with_kind(TK_WHILE) != NULL) {
         expect("(");
         Node *test = expr();
