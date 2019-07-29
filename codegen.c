@@ -15,6 +15,12 @@ static void gen_lvar(Node *node) {
 
 /* 抽象構文木を下りながらコードを生成 */
 void gen(Node *node) {
+    if (node == NULL) {
+        // 式が無いときに何もpushしないと、次のpopでスタックがアンダーフローするため、ダミーpushする。
+        printf("    push 255\n");
+        return;
+    }
+
     int cnt = label_count;
     label_count++;
 
@@ -51,13 +57,7 @@ void gen(Node *node) {
         gen(node->v.cif.tbody);
         printf("    jmp .Lend%d\n", cnt);
         printf(".Lelse%d:\n", cnt);
-        if (node->v.cif.ebody == NULL) {
-            // if-thenが実行されなかったときに何もpushしないと、
-            // 次のpopでスタックがアンダーフローするため、ダミーpushする。
-            printf("    push 0\n");
-        } else {
-            gen(node->v.cif.ebody);
-        }
+        gen(node->v.cif.ebody);
         printf(".Lend%d:\n", cnt);
         return;
     case ND_WHILE:
@@ -67,11 +67,10 @@ void gen(Node *node) {
         printf("    cmp rax, 0\n");
         printf("    je .Lbreak%d\n", cnt);
         gen(node->v.cwhile.body);
+        printf("    pop rax\n");
         printf("    jmp .Lbegin%d\n", cnt);
         printf(".Lbreak%d:\n", cnt);
-        // if-thenが実行されなかったときに何もpushしないと、
-        // 次のpopでスタックがアンダーフローするため、ダミーpushする。
-        printf("    push 0\n");
+        gen(NULL);  // dummy push
         printf(".Lend%d:\n", cnt);
         return;
     default:

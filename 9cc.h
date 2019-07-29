@@ -68,13 +68,13 @@ struct Node {
             Node *lhs;  // 左辺
             Node *rhs;  // 右辺
         } op2;
-        // if
+        // if (test) tbody else ebody
         struct {
             Node *test;
             Node *tbody;  // then-body
             Node *ebody;  // else-body
         } cif;
-        // while
+        // while (test) body
         struct {
             Node *test;
             Node *body;
