@@ -283,7 +283,7 @@ static LVar *find_local(const Token *tok) {
 }
 
 /* 1項演算子のノードを作成する */
-struct Node *new_node_op1(NodeKind kind, Node *expr) {
+static Node *new_node_op1(NodeKind kind, Node *expr) {
     Node *node = calloc(1, sizeof(Node));
 
     node->kind = kind;
@@ -292,7 +292,7 @@ struct Node *new_node_op1(NodeKind kind, Node *expr) {
 }
 
 /* 2項演算子のノードを作成する */
-struct Node *new_node_op2(NodeKind kind, Node *lhs, Node *rhs) {
+static Node *new_node_op2(NodeKind kind, Node *lhs, Node *rhs) {
     Node *node = calloc(1, sizeof(Node));
 
     node->kind = kind;
@@ -302,7 +302,7 @@ struct Node *new_node_op2(NodeKind kind, Node *lhs, Node *rhs) {
 }
 
 /* if 文のノードを作成する */
-struct Node *new_node_if(Node *test, Node *tbody, Node *ebody) {
+static Node *new_node_if(Node *test, Node *tbody, Node *ebody) {
     Node *node = calloc(1, sizeof(Node));
 
     node->kind = ND_IF;
@@ -313,7 +313,7 @@ struct Node *new_node_if(Node *test, Node *tbody, Node *ebody) {
 }
 
 /* while 文のノードを作成する */
-struct Node *new_node_while(Node *test, Node *body) {
+static Node *new_node_while(Node *test, Node *body) {
     Node *node = calloc(1, sizeof(Node));
 
     node->kind = ND_WHILE;
@@ -323,7 +323,7 @@ struct Node *new_node_while(Node *test, Node *body) {
 }
 
 /* 数値ノードを作成する */
-struct Node *new_node_num(int val) {
+static Node *new_node_num(int val) {
     Node *node = calloc(1, sizeof(Node));
 
     node->kind = ND_NUM;
