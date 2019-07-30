@@ -13,8 +13,10 @@
    add        = mul ("+" mul | "-" mul)*
    mul        = unary ("*" unary | "/" unary)*
    unary      = ("+" | "-")? term
-   term       = num | var | "(" expr ")"
-   var        = ("a" ～ "z") ("a" ～ "z" | "A" ～ "Z" | "0" ～ "9" | "_")*
+   term       = num
+              | ident ("(" ")")?
+              | "(" expr ")"
+   ident      = ("a" ～ "z") ("a" ～ "z" | "A" ～ "Z" | "0" ～ "9" | "_")*
    num        = int ("0" | int)*
    int        = "1" ～ "9"
  */
@@ -402,6 +404,16 @@ static Node *var(const Token *tok) {
     return node;
 }
 
+/* パーサ: func */
+static Node *func(const Token *tok) {
+    Node *node = calloc(1, sizeof(Node));
+
+    node->kind = ND_FUNC;
+    node->v.func.name = (char *)tok->str;
+    node->v.func.len = tok->len;
+    return node;
+}
+
 /* パーサ: term */
 static Node *expr(void);
 static Node *term(void) {
@@ -412,7 +424,16 @@ static Node *term(void) {
     } else {
         Token *tok = consume_with_kind(TK_IDENT);
         if (tok != NULL) {
-            return var(tok);
+            // 関数呼び出し
+            if (consume("(") == true) {
+                Node *node = func(tok);
+                expect(")");
+                return node;
+            }
+            // 変数
+            else {
+                return var(tok);
+            }
         } else {
             return num();
         }

@@ -4,8 +4,9 @@ try() {
     expected="$1"
     input="$2"
 
+    gcc -c test.c
     ./9cc "$input" > tmp.s
-    gcc -o tmp tmp.s
+    gcc -o tmp tmp.s test.o
     ./tmp
     actual="$?"
 
@@ -97,5 +98,6 @@ try 10 "a=0; i=0; for(; i<10; i=i+1){ a=a+1; } return a;"
 try 10 "i=0; for(; i<10; ){ i=i+1; } return i;"
 try 16 "ans=1; for(i=0; i<4; ){ i=i+1; ans=ans*2; } return ans;"
 try 16 "i=0; ans=1; while(i<4){ i=i+1; ans=ans*2; } return ans;"
+try 0 "func1(); return 0;"
 
 echo OK

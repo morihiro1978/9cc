@@ -46,6 +46,7 @@ typedef enum {
     ND_WHILE,   // while
     ND_FOR,     // for
     ND_LVAR,    // 変数
+    ND_FUNC,    // 関数
     ND_BLOCK    // ブロック
 } NodeKind;
 
@@ -62,6 +63,11 @@ struct Node {
         struct {
             int offset;  // ベースポインタからのオフセット
         } lvar;
+        // 関数
+        struct {
+            char *name;
+            int len;
+        } func;
         // 1項演算子
         struct {
             Node *expr;

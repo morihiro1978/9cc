@@ -35,7 +35,7 @@ static void gen_block(Node *block) {
 void gen(Node *node) {
     if (node == NULL) {
         // 式が無いときに何もpushしないと、次のpopでスタックがアンダーフローするため、ダミーpushする。
-        printf("    push 255\n");
+        printf("    push 0xcc\n");
         return;
     }
 
@@ -110,6 +110,16 @@ void gen(Node *node) {
         return;
     case ND_BLOCK:
         gen_block(node);
+        return;
+    case ND_FUNC:
+        printf("    push rbp\n");
+        printf("    mov rbp, rsp\n");
+        // 関数呼び出しのまえに、rspを16の倍数に整える
+        printf("    mov r12, rsp\n");
+        printf("    and r12, 0xf\n");
+        printf("    sub rsp, r12\n");
+        printf("    call %.*s\n", node->v.func.len, node->v.func.name);
+        gen(NULL);  // dummy push
         return;
     default:
         break;
