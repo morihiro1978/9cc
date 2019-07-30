@@ -14,7 +14,7 @@ typedef enum {
     TK_ELSE,      // else
     TK_WHILE,     // while
     TK_FOR,       // for
-    TK_VAR,       // 変数
+    TK_IDENT,     // 変数
     TK_NUM,       // 整数
     TK_EOF        // EOF
 } TokenKind;

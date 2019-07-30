@@ -206,7 +206,7 @@ void tokenize(char *exp) {
         }
         // 変数
         else if ((len = is_exp_variable(exp)) > 0) {
-            cur = new_token(TK_VAR, exp, len, cur);
+            cur = new_token(TK_IDENT, exp, len, cur);
             exp += len;
         }
         // 数値
@@ -410,7 +410,7 @@ static Node *term(void) {
         expect(")");
         return node;
     } else {
-        Token *tok = consume_with_kind(TK_VAR);
+        Token *tok = consume_with_kind(TK_IDENT);
         if (tok != NULL) {
             return var(tok);
         } else {
