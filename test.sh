@@ -99,5 +99,6 @@ try 10 "i=0; for(; i<10; ){ i=i+1; } return i;"
 try 16 "ans=1; for(i=0; i<4; ){ i=i+1; ans=ans*2; } return ans;"
 try 16 "i=0; ans=1; while(i<4){ i=i+1; ans=ans*2; } return ans;"
 try 0 "func1(); return 0;"
+try 246 "ret=func1(); ret=ret*2; return ret;"
 
 echo OK

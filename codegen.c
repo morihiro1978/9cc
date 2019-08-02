@@ -145,14 +145,13 @@ void gen(Node *node) {
         return;
     case ND_FUNC:
         printf("# func: %.*s\n", node->v.func.len, node->v.func.name);
-        printf("    push rbp\n");
-        printf("    mov rbp, rsp\n");
         // 関数呼び出しのまえに、rspを16の倍数に整える
         printf("    mov r12, rsp\n");
         printf("    and r12, 0xf\n");
         printf("    sub rsp, r12\n");
         printf("    call %.*s\n", node->v.func.len, node->v.func.name);
-        gen(NULL);  // dummy push
+        printf("    add rsp, r12\n");
+        printf("    push rax\n");
         printf("\n");
         return;
     default:
