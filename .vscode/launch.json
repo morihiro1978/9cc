@@ -4,30 +4,56 @@
   // 詳細情報は次を確認してください: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [{
-    "name": "gdb",
-    "type": "cppdbg",
-    "request": "launch",
-    // "program": "${workspaceFolder}/9cc",
-    "program": "/mnt/c/program/9cc/9cc",
-    "args": ["a=5\\;b=20\\;return a+b;"],
-    "stopAtEntry": false,
-    // "cwd": "${workspaceFolder}",
-    "cwd": "/mnt/c/program/9cc",
-    "environment": [],
-    "externalConsole": true,
-    "pipeTransport": {
-      "debuggerPath": "/usr/bin/gdb",
-      "pipeProgram": "${env:windir}\\system32\\bash.exe",
-      "pipeArgs": ["-c"],
-      "pipeCwd": ""
+      "name": "9cc",
+      "type": "cppdbg",
+      "request": "launch",
+      // "program": "${workspaceFolder}/9cc",
+      "program": "/mnt/c/program/9cc/9cc",
+      "args": ["func();"],
+      "stopAtEntry": false,
+      // "cwd": "${workspaceFolder}",
+      "cwd": "/mnt/c/program/9cc",
+      "environment": [],
+      "externalConsole": true,
+      "pipeTransport": {
+        "debuggerPath": "/usr/bin/gdb",
+        "pipeProgram": "${env:windir}\\system32\\bash.exe",
+        "pipeArgs": ["-c"],
+        "pipeCwd": ""
+      },
+      "setupCommands": [{
+        "description": "Enable pretty-printing for gdb",
+        "text": "-enable-pretty-printing",
+        "ignoreFailures": true
+      }],
+      "sourceFileMap": {
+        "/mnt/c/program": "C:\\program"
+      }
     },
-    "setupCommands": [{
-      "description": "Enable pretty-printing for gdb",
-      "text": "-enable-pretty-printing",
-      "ignoreFailures": true
-    }],
-    "sourceFileMap": {
-      "/mnt/c/program": "C:\\program"
+    {
+      "name": "app",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "/mnt/c/program/9cc/app",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "/mnt/c/program/9cc",
+      "environment": [],
+      "externalConsole": true,
+      "pipeTransport": {
+        "debuggerPath": "/usr/bin/gdb",
+        "pipeProgram": "${env:windir}\\system32\\bash.exe",
+        "pipeArgs": ["-c"],
+        "pipeCwd": ""
+      },
+      "setupCommands": [{
+        "description": "Enable pretty-printing for gdb",
+        "text": "-enable-pretty-printing",
+        "ignoreFailures": true
+      }],
+      "sourceFileMap": {
+        "/mnt/c/program": "C:\\program"
+      }
     }
-  }, ]
+  ]
 }

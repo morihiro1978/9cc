@@ -1,5 +1,6 @@
 /9cc
 /tmp*
+/app*
 
 # Prerequisites
 *.d

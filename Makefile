@@ -11,6 +11,6 @@ test: 9cc
 	./test.sh
 
 clean:
-	rm -f 9cc *.o tmp*
+	rm -f 9cc *.o app app.s
 
 .PHONY: test clean

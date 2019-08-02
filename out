@@ -2,8 +2,8 @@
 code="$1"
 
 gcc -c test.c
-./9cc "$code" > tmp.s
-gcc -o tmp tmp.s test.o
-./tmp
+./9cc "$code" > app.s
+gcc -g -O0 -o app app.s test.o
+./app
 actual="$?"
 echo $actual

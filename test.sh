@@ -5,9 +5,9 @@ try() {
     input="$2"
 
     gcc -c test.c
-    ./9cc "$input" > tmp.s
-    gcc -o tmp tmp.s test.o
-    ./tmp
+    ./9cc "$input" > app.s
+    gcc -g -O0 -o app app.s test.o
+    ./app
     actual="$?"
 
     if [ "$actual" = "$expected" ]; then
