@@ -16,11 +16,13 @@ int main(int argc, char **argv) {
     printf(".global main\n");
     printf("main:\n");
 
-    // エピローグ
+    // プロローグ
     // 変数の領域を確保
+    printf("# prologue\n");
     printf("    push rbp\n");
     printf("    mov rbp, rsp\n");
     printf("    sub rsp, %d\n", locals == NULL ? 0 : locals->offset);
+    printf("\n");
 
     // 全ての式を処理
     for (int i = 0; code[i] != NULL; i++) {
@@ -29,10 +31,12 @@ int main(int argc, char **argv) {
 
         // スタックの一番上に式全体の結果が残っているので、それを戻り値とする
         printf("    pop rax\n");
+        printf("\n");
     }
 
     // エピローグ
     // 最後の式の結果が RAX に残っているので、それを返す
+    printf("# epilogue\n");
     printf("    mov rsp, rbp\n");
     printf("    pop rbp\n");
     printf("    ret\n");

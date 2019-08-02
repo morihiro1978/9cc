@@ -61,6 +61,8 @@ struct Node {
         } num;
         // 変数
         struct {
+            char *name;
+            int len;
             int offset;  // ベースポインタからのオフセット
         } lvar;
         // 関数

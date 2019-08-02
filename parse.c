@@ -400,6 +400,8 @@ static Node *var(const Token *tok) {
     }
 
     node->kind = ND_LVAR;
+    node->v.lvar.name = var->name;
+    node->v.lvar.len = var->len;
     node->v.lvar.offset = var->offset;
     return node;
 }
