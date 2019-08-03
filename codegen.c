@@ -1,21 +1,240 @@
+#include <stdarg.h>
 #include "9cc.h"
 
 /* ラベルカウター */
 static int label_count = 0;
 
-/* 変数のコードを生成 */
-static void gen_lvar(Node *node) {
+static void comment(const char *format, ...) {
+    va_list ap;
+    printf("# ");
+    va_start(ap, format);
+    vprintf(format, ap);
+    va_end(ap);
+}
+
+/* 整数 */
+static void gen_num(Node *node) {
+    comment("num: %d\n", node->v.num.val);
+    printf("    push %d\n", node->v.num.val);
+}
+
+/* 足し算 */
+static void gen_add(Node *node) {
+    gen(node->v.op2.lhs);
+    gen(node->v.op2.rhs);
+    printf("    pop rdi\n");
+    printf("    pop rax\n");
+    printf("    add rax, rdi\n");
+    printf("    push rax\n");
+}
+
+/* 引き算 */
+static void gen_sub(Node *node) {
+    gen(node->v.op2.lhs);
+    gen(node->v.op2.rhs);
+    printf("    pop rdi\n");
+    printf("    pop rax\n");
+    printf("    sub rax, rdi\n");
+    printf("    push rax\n");
+}
+
+/* 掛け算 */
+static void gen_mul(Node *node) {
+    gen(node->v.op2.lhs);
+    gen(node->v.op2.rhs);
+    printf("    pop rdi\n");
+    printf("    pop rax\n");
+    printf("    imul rax, rdi\n");
+    printf("    push rax\n");
+}
+
+/* 割り算 */
+static void gen_div(Node *node) {
+    gen(node->v.op2.lhs);
+    gen(node->v.op2.rhs);
+    printf("    pop rdi\n");
+    printf("    pop rax\n");
+    printf("    cqo\n");
+    printf("    idiv rdi\n");
+    printf("    push rax\n");
+}
+
+/* 比較演算子 */
+static void gen_eq(Node *node) {
+    gen(node->v.op2.lhs);
+    gen(node->v.op2.rhs);
+    printf("    pop rdi\n");
+    printf("    pop rax\n");
+    printf("    cmp rax, rdi\n");
+    printf("    sete al\n");
+    printf("    movzb rax, al\n");
+    printf("    push rax\n");
+}
+
+/* 比較演算子 */
+static void gen_ne(Node *node) {
+    gen(node->v.op2.lhs);
+    gen(node->v.op2.rhs);
+    printf("    pop rdi\n");
+    printf("    pop rax\n");
+    printf("    cmp rax, rdi\n");
+    printf("    setne al\n");
+    printf("    movzb rax, al\n");
+    printf("    push rax\n");
+}
+
+/* 比較演算子 */
+static void gen_lt(Node *node) {
+    gen(node->v.op2.lhs);
+    gen(node->v.op2.rhs);
+    printf("    pop rdi\n");
+    printf("    pop rax\n");
+    printf("    cmp rax, rdi\n");
+    printf("    setl al\n");
+    printf("    movzb rax, al\n");
+    printf("    push rax\n");
+}
+
+/* 比較演算子 */
+static void gen_le(Node *node) {
+    gen(node->v.op2.lhs);
+    gen(node->v.op2.rhs);
+    printf("    pop rdi\n");
+    printf("    pop rax\n");
+    printf("    cmp rax, rdi\n");
+    printf("    setle al\n");
+    printf("    movzb rax, al\n");
+    printf("    push rax\n");
+}
+
+/* 変数のアドレス */
+static void gen_lvar_addr(Node *node) {
     if (node->kind != ND_LVAR) {
         error("代入の左辺値が変数ではありません。");
     }
-    printf("# lvar: %.*s \n", node->v.lvar.len, node->v.lvar.name);
+    comment("lvar: %.*s \n", node->v.lvar.len, node->v.lvar.name);
     printf("    mov rax, rbp\n");
     printf("    sub rax, %d\n", node->v.lvar.offset);
     printf("    push rax\n");
-    printf("\n");
 }
 
-/* ブロックのコードを生成 */
+/* 変数 */
+static void gen_lvar(Node *node) {
+    gen_lvar_addr(node);
+    printf("    pop rax\n");
+    printf("    mov rax, [rax]\n");
+    printf("    push rax\n");
+}
+
+/* 代入 */
+static void gen_assign(Node *node) {
+    gen_lvar_addr(node->v.op2.lhs);
+    gen(node->v.op2.rhs);
+    comment("assign\n");
+    printf("    pop rdi\n");
+    printf("    pop rax\n");
+    printf("    mov [rax], rdi\n");
+    printf("    push rdi\n");
+}
+
+/* return */
+static void gen_return(Node *node) {
+    gen(node->v.op1.expr);
+    comment("return\n");
+    printf("    pop rax\n");
+    printf("    mov rsp, rbp\n");
+    printf("    pop rbp\n");
+    printf("    ret\n");
+}
+
+/* if */
+static void gen_if(Node *node) {
+    int cnt = label_count;
+    label_count++;
+
+    comment("if - test -->\n");
+    gen(node->v.cif.test);
+    comment("if - test <--\n");
+    printf("    pop rax\n");
+    printf("    cmp rax, 0\n");
+    printf("    je .Lelse%d\n", cnt);
+    comment("if - tbody -->\n");
+    gen(node->v.cif.tbody);
+    comment("if - tbody <--\n");
+    printf("    jmp .Lend%d\n", cnt);
+    printf(".Lelse%d:\n", cnt);
+    comment("if - ebody -->\n");
+    gen(node->v.cif.ebody);
+    comment("if - ebody <--\n");
+    printf(".Lend%d:\n", cnt);
+}
+
+/* while */
+static void gen_while(Node *node) {
+    int cnt = label_count;
+    label_count++;
+
+    comment("while\n");
+    printf(".Lbegin%d:\n", cnt);
+    comment("while - test -->\n");
+    gen(node->v.cwhile.test);
+    comment("while - test <--\n");
+    printf("    pop rax\n");
+    printf("    cmp rax, 0\n");
+    printf("    je .Lbreak%d\n", cnt);
+    comment("while - body -->\n");
+    gen(node->v.cwhile.body);
+    comment("while - body <--\n");
+    printf("    pop rax\n");
+    printf("    jmp .Lbegin%d\n", cnt);
+    printf(".Lbreak%d:\n", cnt);
+    gen(NULL);  // dummy push
+    printf(".Lend%d:\n", cnt);
+}
+
+/* for */
+static void gen_for(Node *node) {
+    int cnt = label_count;
+    label_count++;
+
+    comment("for - init -->\n");
+    gen(node->v.cfor.init);
+    comment("for - init <--\n");
+    printf("    pop rax\n");
+    printf(".Lbegin%d:\n", cnt);
+    comment("for - test -->\n");
+    gen(node->v.cfor.test);
+    comment("for - test <--\n");
+    printf("    pop rax\n");
+    printf("    cmp rax, 0\n");
+    printf("    je .Lbreak%d\n", cnt);
+    comment("for - body -->\n");
+    gen(node->v.cfor.body);
+    comment("for - body <--\n");
+    printf("    pop rax\n");
+    comment("for - update -->\n");
+    gen(node->v.cfor.update);
+    comment("for - update <--\n");
+    printf("    pop rax\n");
+    printf("    jmp .Lbegin%d\n", cnt);
+    printf(".Lbreak%d:\n", cnt);
+    gen(NULL);  // dummy push
+    printf(".Lend%d:\n", cnt);
+}
+
+/* 関数呼び出し */
+static void gen_call_func(Node *node) {
+    comment("func: %.*s\n", node->v.func.len, node->v.func.name);
+    // 関数呼び出しのまえに、rspを16の倍数に整える
+    printf("    mov r12, rsp\n");
+    printf("    and r12, 0xf\n");
+    printf("    sub rsp, r12\n");
+    printf("    call %.*s\n", node->v.func.len, node->v.func.name);
+    printf("    add rsp, r12\n");
+    printf("    push rax\n");
+}
+
+/* ブロック */
 static void gen_block(Node *block) {
     if (block->v.block.num > 0) {
         int i = 0;
@@ -41,168 +260,61 @@ void gen(Node *node) {
         return;
     }
 
-    int cnt = label_count;
-    label_count++;
-
     switch (node->kind) {
     case ND_NUM:
-        printf("# num: %d\n", node->v.num.val);
-        printf("    push %d\n", node->v.num.val);
-        printf("\n");
-        return;
-    case ND_ASSIGN:
-        gen_lvar(node->v.op2.lhs);
-        gen(node->v.op2.rhs);
-        printf("# assign\n");
-        printf("    pop rdi\n");
-        printf("    pop rax\n");
-        printf("    mov [rax], rdi\n");
-        printf("    push rdi\n");
-        printf("\n");
-        return;
+        gen_num(node);
+        break;
+    case ND_ADD:
+        gen_add(node);
+        break;
+    case ND_SUB:
+        gen_sub(node);
+        break;
+    case ND_MUL:
+        gen_mul(node);
+        break;
+    case ND_DIV:
+        gen_div(node);
+        break;
+    case ND_EQ:
+        gen_eq(node);
+        break;
+    case ND_NE:
+        gen_ne(node);
+        break;
+    case ND_LT:
+        gen_lt(node);
+        break;
+    case ND_LE:
+        gen_le(node);
+        break;
     case ND_LVAR:
         gen_lvar(node);
-        printf("    pop rax\n");
-        printf("    mov rax, [rax]\n");
-        printf("    push rax\n");
-        printf("\n");
-        return;
+        break;
+    case ND_ASSIGN:
+        gen_assign(node);
+        break;
     case ND_RETURN:
-        gen(node->v.op1.expr);
-        printf("# return\n");
-        printf("    pop rax\n");
-        printf("    mov rsp, rbp\n");
-        printf("    pop rbp\n");
-        printf("    ret\n");
-        printf("\n");
-        return;
+        gen_return(node);
+        break;
     case ND_IF:
-        printf("# if - test -->\n");
-        gen(node->v.cif.test);
-        printf("# if - test <--\n");
-        printf("    pop rax\n");
-        printf("    cmp rax, 0\n");
-        printf("    je .Lelse%d\n", cnt);
-        printf("# if - tbody -->\n");
-        gen(node->v.cif.tbody);
-        printf("# if - tbody <--\n");
-        printf("    jmp .Lend%d\n", cnt);
-        printf(".Lelse%d:\n", cnt);
-        printf("# if - ebody -->\n");
-        gen(node->v.cif.ebody);
-        printf("# if - ebody <--\n");
-        printf(".Lend%d:\n", cnt);
-        printf("\n");
-        return;
+        gen_if(node);
+        break;
     case ND_WHILE:
-        printf("# while\n");
-        printf(".Lbegin%d:\n", cnt);
-        printf("# while - test -->\n");
-        gen(node->v.cwhile.test);
-        printf("# while - test <--\n");
-        printf("    pop rax\n");
-        printf("    cmp rax, 0\n");
-        printf("    je .Lbreak%d\n", cnt);
-        printf("# while - body -->\n");
-        gen(node->v.cwhile.body);
-        printf("# while - body <--\n");
-        printf("    pop rax\n");
-        printf("    jmp .Lbegin%d\n", cnt);
-        printf(".Lbreak%d:\n", cnt);
-        gen(NULL);  // dummy push
-        printf(".Lend%d:\n", cnt);
-        printf("\n");
-        return;
+        gen_while(node);
+        break;
     case ND_FOR:
-        printf("# for - init -->\n");
-        gen(node->v.cfor.init);
-        printf("# for - init <--n");
-        printf("    pop rax\n");
-        printf(".Lbegin%d:\n", cnt);
-        printf("# for - test -->\n");
-        gen(node->v.cfor.test);
-        printf("# for - test <--n");
-        printf("    pop rax\n");
-        printf("    cmp rax, 0\n");
-        printf("    je .Lbreak%d\n", cnt);
-        printf("# for - body -->\n");
-        gen(node->v.cfor.body);
-        printf("# for - body <--n");
-        printf("    pop rax\n");
-        printf("# for - update -->\n");
-        gen(node->v.cfor.update);
-        printf("# for - update <--n");
-        printf("    pop rax\n");
-        printf("    jmp .Lbegin%d\n", cnt);
-        printf(".Lbreak%d:\n", cnt);
-        gen(NULL);  // dummy push
-        printf(".Lend%d:\n", cnt);
-        printf("\n");
-        return;
+        gen_for(node);
+        break;
     case ND_BLOCK:
         gen_block(node);
-        printf("\n");
-        return;
+        break;
     case ND_FUNC:
-        printf("# func: %.*s\n", node->v.func.len, node->v.func.name);
-        // 関数呼び出しのまえに、rspを16の倍数に整える
-        printf("    mov r12, rsp\n");
-        printf("    and r12, 0xf\n");
-        printf("    sub rsp, r12\n");
-        printf("    call %.*s\n", node->v.func.len, node->v.func.name);
-        printf("    add rsp, r12\n");
-        printf("    push rax\n");
-        printf("\n");
-        return;
-    default:
-        break;
-    }
-
-    gen(node->v.op2.lhs);
-    gen(node->v.op2.rhs);
-    printf("    pop rdi\n");
-    printf("    pop rax\n");
-
-    switch (node->kind) {
-    case ND_ADD:  // +
-        printf("    add rax, rdi\n");
-        break;
-    case ND_SUB:  // -
-        printf("    sub rax, rdi\n");
-        break;
-    case ND_MUL:  // *
-        printf("    imul rax, rdi\n");
-        break;
-    case ND_DIV:  // /
-        printf("    cqo\n");
-        printf("    idiv rdi\n");
-        break;
-    case ND_EQ:  // ==
-        printf("    cmp rax, rdi\n");
-        printf("    sete al\n");
-        printf("    movzb rax, al\n");
-        break;
-    case ND_NE:  // !=
-        printf("    cmp rax, rdi\n");
-        printf("    setne al\n");
-        printf("    movzb rax, al\n");
-        break;
-    case ND_LT:  // <
-        printf("    cmp rax, rdi\n");
-        printf("    setl al\n");
-        printf("    movzb rax, al\n");
-        break;
-        break;
-    case ND_LE:  // <=
-        printf("    cmp rax, rdi\n");
-        printf("    setle al\n");
-        printf("    movzb rax, al\n");
+        gen_call_func(node);
         break;
     default:
         error("未定義のノードです。");
         break;
     }
-
-    printf("    push rax\n");
     printf("\n");
 }
