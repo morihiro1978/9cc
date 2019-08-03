@@ -224,7 +224,21 @@ static void gen_for(Node *node) {
 
 /* 関数呼び出し */
 static void gen_call_func(Node *node) {
+    int i;
+    char *regs[] = {"rdi",
+                    "rsi",
+                    "rdx",
+                    "rcx",
+                    "r8",
+                    "r9"};  // 第1～6引数に使用するレジスタ
+
     comment("func: %.*s\n", node->v.func.len, node->v.func.name);
+    for (i = 0; i < node->v.func.num_param; i++) {
+        gen(node->v.func.params[i]);
+    }
+    for (i = (node->v.func.num_param - 1); i >= 0; i--) {
+        printf("    pop %s\n", regs[i]);
+    }
     // 関数呼び出しのまえに、rspを16の倍数に整える
     printf("    mov r12, rsp\n");
     printf("    and r12, 0xf\n");

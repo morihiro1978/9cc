@@ -69,6 +69,9 @@ struct Node {
         struct {
             char *name;
             int len;
+            Node **params;
+            int max_param;  // パラメータノードを格納できる最大数
+            int num_param;  // パラメータ数
         } func;
         // 1項演算子
         struct {
@@ -100,8 +103,8 @@ struct Node {
         // ブロック
         struct {
             Node **code;
-            int max;
-            int num;
+            int max;  // コードを格納できる最大数
+            int num;  // コード数
         } block;
     } v;
 };
@@ -124,6 +127,9 @@ extern LVar *locals;
 /* コード */
 #define MAX_CODE (10)
 extern Node *code[MAX_CODE];
+
+/* 関数呼び出し時のパラメータ数 */
+#define MAX_PARAM (6)
 
 /* エラー出力関数 */
 void error(char *fmt, ...);

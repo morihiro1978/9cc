@@ -14,7 +14,7 @@
    mul        = unary ("*" unary | "/" unary)*
    unary      = ("+" | "-")? term
    term       = num
-              | ident ("(" ")")?
+              | ident ("(" ((expr ",")* expr)? ")")?
               | "(" expr ")"
    ident      = ("a" ～ "z") ("a" ～ "z" | "A" ～ "Z" | "0" ～ "9" | "_")*
    num        = int ("0" | int)*
@@ -117,6 +117,7 @@ static int is_exp_reserved(const char *exp) {
     case ';':  // fall down
     case '{':  // fall down
     case '}':  // fall down
+    case ',':  // fall down
         return 1;
     }
     return 0;
@@ -380,6 +381,34 @@ static void block_add(Node *block, Node *node) {
     block->v.block.num++;
 }
 
+/* func ノードを作成する */
+static Node *new_node_func(const Token *tok) {
+    Node *node = calloc(1, sizeof(Node));
+
+    node->kind = ND_FUNC;
+    node->v.func.name = (char *)tok->str;
+    node->v.func.len = tok->len;
+    return node;
+}
+
+/* func ノードにパラメータを追加する */
+static void func_add_param(Node *func, Node *param) {
+    if (func->kind != ND_FUNC) {
+        error("funcノードではありません。");
+    }
+
+    if (func->v.func.max_param == func->v.func.num_param) {
+        func->v.func.max_param += MAX_PARAM;
+        func->v.func.params = (Node **)realloc(
+            func->v.func.params, func->v.func.max_param * sizeof(Node));
+        if (func->v.func.params == NULL) {
+            error("funcノードを %d に拡張できません。", func->v.func.max_param);
+        }
+    }
+    func->v.func.params[func->v.func.num_param] = param;
+    func->v.func.num_param++;
+}
+
 /* パーサ: num */
 static Node *num(void) {
     return new_node_num(expect_number());
@@ -406,16 +435,6 @@ static Node *var(const Token *tok) {
     return node;
 }
 
-/* パーサ: func */
-static Node *func(const Token *tok) {
-    Node *node = calloc(1, sizeof(Node));
-
-    node->kind = ND_FUNC;
-    node->v.func.name = (char *)tok->str;
-    node->v.func.len = tok->len;
-    return node;
-}
-
 /* パーサ: term */
 static Node *expr(void);
 static Node *term(void) {
@@ -428,9 +447,22 @@ static Node *term(void) {
         if (tok != NULL) {
             // 関数呼び出し
             if (consume("(") == true) {
-                Node *node = func(tok);
-                expect(")");
-                return node;
+                Node *func = new_node_func(tok);
+                if (consume(")") == false) {
+                    while (1) {
+                        func_add_param(func, expr());
+                        if (consume(")") == true) {
+                            break;
+                        } else {
+                            expect(",");
+                        }
+                    }
+                }
+                if (func->v.func.max_param > MAX_PARAM) {
+                    error("パラメータが %d 個以上設定されています。",
+                          MAX_PARAM);
+                }
+                return func;
             }
             // 変数
             else {
