@@ -6,7 +6,7 @@ try() {
 
     gcc -c test.c
     ./9cc "$input" > app.s
-    gcc -g -O0 -o app app.s test.o
+    gcc -o app app.s test.o
     ./app
     actual="$?"
 
