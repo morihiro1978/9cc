@@ -22,14 +22,11 @@
  */
 #include "9cc.h"
 
-/* コード */
-Node *code[MAX_CODE];
-
 /* 現在のトークン */
 static Token *token = NULL;
 
-/* ローカル変数のリスト */
-LVar *locals = NULL;
+/* ローカル関数 */
+static Node *expr(Node *pblock);
 
 /* トークンの種類を文字列に変換する */
 static const char *tokenKind_to_str(TokenKind kind) {
@@ -279,21 +276,6 @@ static bool eof(void) {
     return true;
 }
 
-/* tok に一致するローカル変数があれば、その情報を返す。
-   なければ NULL を返す。
- */
-static LVar *find_local(const Token *tok) {
-    LVar *var = locals;
-    while (var != NULL) {
-        if ((tok->len == var->len)
-            && (memcmp(tok->str, var->name, var->len) == 0)) {
-            break;
-        }
-        var = var->next;
-    }
-    return var;
-}
-
 /* 1項演算子のノードを作成する */
 static Node *new_node_op1(NodeKind kind, Node *expr) {
     Node *node = calloc(1, sizeof(Node));
@@ -356,29 +338,73 @@ static Node *new_node_num(int val) {
 }
 
 /* ブロックノードを作成する */
-static Node *new_node_block(void) {
+static Node *new_node_block(Node *pblock) {
     Node *node = calloc(1, sizeof(Node));
 
     node->kind = ND_BLOCK;
+    node->v.block.pblock = pblock;
     return node;
 }
 
 /* ブロックノードにノードを追加する */
-static void block_add(Node *block, Node *node) {
+static void block_add_node(Node *block, Node *node) {
     if (block->kind != ND_BLOCK) {
         error("ブロックノードではありません。");
     }
 
-    if (block->v.block.max == block->v.block.num) {
-        block->v.block.max += MAX_CODE;
+    if (block->v.block.max_code == block->v.block.num_code) {
+        block->v.block.max_code += MAX_CODE;
         block->v.block.code = (Node **)realloc(
-            block->v.block.code, block->v.block.max * sizeof(Node));
+            block->v.block.code, block->v.block.max_code * sizeof(Node));
         if (block->v.block.code == NULL) {
-            error("ブロックノードを %d に拡張できません。", block->v.block.max);
+            error("ブロックノードを %d に拡張できません。",
+                  block->v.block.max_code);
         }
     }
-    block->v.block.code[block->v.block.num] = node;
-    block->v.block.num++;
+    block->v.block.code[block->v.block.num_code] = node;
+    block->v.block.num_code++;
+}
+
+/* ブロックノードに変数を登録する */
+static void block_add_local(Node *block, LVar *var) {
+    var->next = block->v.block.locals;
+    block->v.block.locals = var;
+    block->v.block.num_local++;
+
+    // ブロック内の変数の数をインクリメント
+    // 最上位の親ブロックまでさかのぼってインクリメントすることにより、
+    // 下位ブロックも含めた変数の個数が分かる
+    while (block != NULL) {
+        block->v.block.total_local++;
+        block = block->v.block.pblock;
+    }
+}
+
+/* tok に一致するローカル変数があれば、その情報を返す。
+   なければ、親ブロックにさかのぼって探して返す。
+   グローバルブロックまで探して見つからなければ NULL を返す。
+ */
+static LVar *block_find_local(Node *block, const Token *tok) {
+    while (block != NULL) {
+        LVar *var = block->v.block.locals;
+        while (var != NULL) {
+            if ((tok->len == var->len)
+                && (memcmp(tok->str, var->name, var->len) == 0)) {
+                return var;
+            }
+            var = var->next;
+        }
+        block = block->v.block.pblock;
+    }
+    return NULL;
+}
+
+/* ローカル変数の rbp からのオフセットの最大値を返す */
+static int block_total_local(Node *block) {
+    while (block->v.block.pblock != NULL) {
+        block = block->v.block.pblock;
+    }
+    return block->v.block.total_local;
 }
 
 /* func ノードを作成する */
@@ -415,17 +441,16 @@ static Node *num(void) {
 }
 
 /* パーサ: var */
-static Node *var(const Token *tok) {
+static Node *var(Node *pblock, const Token *tok) {
     Node *node = calloc(1, sizeof(Node));
 
-    LVar *var = find_local(tok);
+    LVar *var = block_find_local(pblock, tok);
     if (var == NULL) {
         var = calloc(1, sizeof(LVar));
         var->name = (char *)tok->str;
         var->len = tok->len;
-        var->offset = locals == NULL ? 8 : locals->offset + 8;
-        var->next = locals;
-        locals = var;
+        var->offset = (block_total_local(pblock) + 1) * 8;
+        block_add_local(pblock, var);
     }
 
     node->kind = ND_LVAR;
@@ -436,10 +461,9 @@ static Node *var(const Token *tok) {
 }
 
 /* パーサ: term */
-static Node *expr(void);
-static Node *term(void) {
+static Node *term(Node *pblock) {
     if (consume("(") == true) {
-        Node *node = expr();
+        Node *node = expr(pblock);
         expect(")");
         return node;
     } else {
@@ -450,7 +474,7 @@ static Node *term(void) {
                 Node *func = new_node_func(tok);
                 if (consume(")") == false) {
                     while (1) {
-                        func_add_param(func, expr());
+                        func_add_param(func, expr(pblock));
                         if (consume(")") == true) {
                             break;
                         } else {
@@ -466,7 +490,7 @@ static Node *term(void) {
             }
             // 変数
             else {
-                return var(tok);
+                return var(pblock, tok);
             }
         } else {
             return num();
@@ -475,25 +499,25 @@ static Node *term(void) {
 }
 
 /* パーサ: unary */
-static Node *unary(void) {
+static Node *unary(Node *pblock) {
     if (consume("+") == true) {
-        return term();
+        return term(pblock);
     } else if (consume("-") == true) {
-        return new_node_op2(ND_SUB, new_node_num(0), term());
+        return new_node_op2(ND_SUB, new_node_num(0), term(pblock));
     } else {
-        return term();
+        return term(pblock);
     }
 }
 
 /* パーサ: mul */
-static Node *mul(void) {
-    Node *node = unary();
+static Node *mul(Node *pblock) {
+    Node *node = unary(pblock);
 
     while (1) {
         if (consume("*") == true) {
-            node = new_node_op2(ND_MUL, node, unary());
+            node = new_node_op2(ND_MUL, node, unary(pblock));
         } else if (consume("/") == true) {
-            node = new_node_op2(ND_DIV, node, unary());
+            node = new_node_op2(ND_DIV, node, unary(pblock));
         } else {
             break;
         }
@@ -502,14 +526,14 @@ static Node *mul(void) {
 }
 
 /* パーサ: add */
-static Node *add(void) {
-    Node *node = mul();
+static Node *add(Node *pblock) {
+    Node *node = mul(pblock);
 
     while (1) {
         if (consume("+") == true) {
-            node = new_node_op2(ND_ADD, node, mul());
+            node = new_node_op2(ND_ADD, node, mul(pblock));
         } else if (consume("-") == true) {
-            node = new_node_op2(ND_SUB, node, mul());
+            node = new_node_op2(ND_SUB, node, mul(pblock));
         } else {
             break;
         }
@@ -518,18 +542,18 @@ static Node *add(void) {
 }
 
 /* パーサ: relational */
-static Node *relational(void) {
-    Node *node = add();
+static Node *relational(Node *pblock) {
+    Node *node = add(pblock);
 
     while (1) {
         if (consume("<") == true) {
-            node = new_node_op2(ND_LT, node, add());
+            node = new_node_op2(ND_LT, node, add(pblock));
         } else if (consume("<=") == true) {
-            node = new_node_op2(ND_LE, node, add());
+            node = new_node_op2(ND_LE, node, add(pblock));
         } else if (consume(">") == true) {
-            node = new_node_op2(ND_LT, add(), node);
+            node = new_node_op2(ND_LT, add(pblock), node);
         } else if (consume(">=") == true) {
-            node = new_node_op2(ND_LE, add(), node);
+            node = new_node_op2(ND_LE, add(pblock), node);
         } else {
             break;
         }
@@ -538,14 +562,14 @@ static Node *relational(void) {
 }
 
 /* パーサ: equality */
-static Node *equality(void) {
-    Node *node = relational();
+static Node *equality(Node *pblock) {
+    Node *node = relational(pblock);
 
     while (1) {
         if (consume("==") == true) {
-            node = new_node_op2(ND_EQ, node, relational());
+            node = new_node_op2(ND_EQ, node, relational(pblock));
         } else if (consume("!=") == true) {
-            node = new_node_op2(ND_NE, node, relational());
+            node = new_node_op2(ND_NE, node, relational(pblock));
         } else {
             break;
         }
@@ -554,84 +578,84 @@ static Node *equality(void) {
 }
 
 /* パーサ: assign */
-static Node *assign(void) {
-    Node *node = equality();
+static Node *assign(Node *pblock) {
+    Node *node = equality(pblock);
 
     if (consume("=") == true) {
-        node = new_node_op2(ND_ASSIGN, node, assign());
+        node = new_node_op2(ND_ASSIGN, node, assign(pblock));
     }
     return node;
 }
 
 /* パーサ: expr */
-static Node *expr(void) {
-    return assign();
+static Node *expr(Node *pblock) {
+    return assign(pblock);
 }
 
 /* パーサ: stmt */
-static Node *stmt(void) {
+static Node *stmt(Node *pblock) {
     Node *node = NULL;
     if (consume_with_kind(TK_RETURN) != NULL) {
-        node = new_node_op1(ND_RETURN, expr());
+        node = new_node_op1(ND_RETURN, expr(pblock));
         expect(";");
     } else if (consume_with_kind(TK_IF) != NULL) {
         expect("(");
-        Node *test = expr();
+        Node *test = expr(pblock);
         expect(")");
-        Node *tbody = stmt();
+        Node *tbody = stmt(pblock);
         Node *ebody = NULL;
         if (consume_with_kind(TK_ELSE) != NULL) {
-            ebody = stmt();
+            ebody = stmt(pblock);
         }
         node = new_node_if(test, tbody, ebody);
     } else if (consume_with_kind(TK_WHILE) != NULL) {
         expect("(");
-        Node *test = expr();
+        Node *test = expr(pblock);
         expect(")");
-        node = new_node_while(test, stmt());
+        node = new_node_while(test, stmt(pblock));
     } else if (consume_with_kind(TK_FOR) != NULL) {
         Node *init = NULL;
         Node *test = NULL;
         Node *update = NULL;
         expect("(");
         if (consume(";") == false) {
-            init = expr();
+            init = expr(pblock);
             expect(";");
         }
         if (consume(";") == false) {
-            test = expr();
+            test = expr(pblock);
             expect(";");
         }
         if (consume(")") == false) {
-            update = expr();
+            update = expr(pblock);
             expect(")");
         }
-        node = new_node_for(init, test, update, stmt());
+        node = new_node_for(init, test, update, stmt(pblock));
     } else if (consume("{") == true) {
-        Node *block = new_node_block();
+        Node *block = new_node_block(pblock);
+        pblock = block;
         while (consume("}") == false) {
-            block_add(block, stmt());
+            block_add_node(block, stmt(pblock));
         }
         return block;
     } else {
-        node = expr();
+        node = expr(pblock);
         expect(";");
     }
     return node;
 }
 
 /* パーサ: program */
-static void program(void) {
-    int i = 0;
+static Node *program(void) {
+    Node *global_block = new_node_block(NULL);
 
     while (eof() == false) {
-        code[i] = stmt();
-        i++;
+        block_add_node(global_block, stmt(global_block));
     }
-    code[i] = NULL;
+    return global_block;
 }
 
 /* パース */
-void parse(void) {
-    program();
+Node *parse(void) {
+    return program();
 }

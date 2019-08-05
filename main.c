@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
     // 式をトークナイズしてパースする
     user_input = argv[1];
     tokenize(argv[1]);
-    parse();
+    Node *program = parse();
 
     // アセンブリの前半を出力
     printf(".intel_syntax noprefix\n");
@@ -21,10 +21,17 @@ int main(int argc, char **argv) {
     printf("# prologue\n");
     printf("    push rbp\n");
     printf("    mov rbp, rsp\n");
-    printf("    sub rsp, %d\n", locals == NULL ? 0 : locals->offset);
+#if 0
+    printf("    sub rsp, %d\n", program->v.block.tobal_local * 8);
+#else
+    for (int i = 0; i < program->v.block.total_local; i++) {
+        printf("    push 0xcc\n");
+    }
+#endif
     printf("\n");
 
     // 全ての式を処理
+    Node **code = program->v.block.code;
     for (int i = 0; code[i] != NULL; i++) {
         // 抽象構文木を下りながらコードを生成
         gen(code[i]);

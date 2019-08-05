@@ -50,6 +50,8 @@ typedef enum {
     ND_BLOCK    // ブロック
 } NodeKind;
 
+typedef struct LVar LVar;
+
 /* 抽象構文機のノード */
 typedef struct Node Node;
 struct Node {
@@ -103,14 +105,17 @@ struct Node {
         // ブロック
         struct {
             Node **code;
-            int max;  // コードを格納できる最大数
-            int num;  // コード数
+            int max_code;     // コードを格納できる最大数
+            int num_code;     // コード数
+            LVar *locals;     // ローカル変数
+            int num_local;    // ローカル変数の個数
+            int total_local;  // このブロック以下の全てのブロックのローカル変数の個数
+            Node *pblock;     // 親ブロック
         } block;
     } v;
 };
 
 /* ローカル変数の型 */
-typedef struct LVar LVar;
 struct LVar {
     char *name;  // 変数の名前
     int len;     // 名前の長さ
@@ -121,12 +126,8 @@ struct LVar {
 /* 入力プログラム */
 extern const char *user_input;
 
-/* ローカル変数のリスト */
-extern LVar *locals;
-
-/* コード */
+/* ブロック内の stmt 数 */
 #define MAX_CODE (10)
-extern Node *code[MAX_CODE];
 
 /* 関数呼び出し時のパラメータ数 */
 #define MAX_PARAM (6)
@@ -141,7 +142,7 @@ void error_at(const char *exp, char *fmt, ...);
 void tokenize(char *exp);
 
 /* パース */
-void parse(void);
+Node *parse(void);
 
 /* 抽象構文木を下りながらコードを生成 */
 void gen(Node *node);

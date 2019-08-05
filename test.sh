@@ -112,5 +112,10 @@ try 6 "p1=1; p2=2; p3=3; ret=func3(p1,p2,p3); return ret;"
 try 10 "p1=1; p2=2; p3=3; p4=4; ret=func4(p1,p2,p3,p4); return ret;"
 try 15 "p1=1; p2=2; p3=3; p4=4; p5=5; ret=func5(p1,p2,p3,p4,p5); return ret;"
 try 21 "p1=1; p2=2; p3=3; p4=4; p5=5; p6=6; ret=func6(p1,p2,p3,p4,p5,p6); return ret;"
+try 1 "a=0; {a=1;} return a;"
+try 1 "{a=0; {a=1;} return a;}"
+try 1 "{a=0; {{a=1;}} return a;}"
+try 1 "{a=0; {{a=1;} return a;}}"
+try 204 "a=0; {b=1;} return b;"
 
 echo OK

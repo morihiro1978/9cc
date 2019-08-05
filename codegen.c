@@ -250,12 +250,12 @@ static void gen_call_func(Node *node) {
 
 /* ブロック */
 static void gen_block(Node *block) {
-    if (block->v.block.num > 0) {
+    if (block->v.block.num_code > 0) {
         int i = 0;
         while (1) {
             gen(block->v.block.code[i]);
             i++;
-            if (i >= block->v.block.num) {
+            if (i >= block->v.block.num_code) {
                 break;
             }
             // ステートメントごとに、そのステートメントが push した値を pop
