@@ -7,12 +7,10 @@
       "name": "9cc",
       "type": "cppdbg",
       "request": "launch",
-      // "program": "${workspaceFolder}/9cc",
-      "program": "/mnt/c/program/9cc/9cc",
-      "args": ["func();"],
+      "program": "${command:extension.vscode-wsl-workspaceFolder}/9cc",
+      "args": ["func1(1,a1);"],
       "stopAtEntry": false,
-      // "cwd": "${workspaceFolder}",
-      "cwd": "/mnt/c/program/9cc",
+      "cwd": "${command:extension.vscode-wsl-workspaceFolder}",
       "environment": [],
       "externalConsole": true,
       "pipeTransport": {
@@ -27,17 +25,17 @@
         "ignoreFailures": true
       }],
       "sourceFileMap": {
-        "/mnt/c/program": "C:\\program"
+        "${command:extension.vscode-wsl-workspaceFolder}": "${workspaceFolder}"
       }
     },
     {
       "name": "app",
       "type": "cppdbg",
       "request": "launch",
-      "program": "/mnt/c/program/9cc/app",
+      "program": "${command:extension.vscode-wsl-workspaceFolder}/app",
       "args": [],
       "stopAtEntry": false,
-      "cwd": "/mnt/c/program/9cc",
+      "cwd": "${command:extension.vscode-wsl-workspaceFolder}",
       "environment": [],
       "externalConsole": true,
       "pipeTransport": {
@@ -52,7 +50,7 @@
         "ignoreFailures": true
       }],
       "sourceFileMap": {
-        "/mnt/c/program": "C:\\program"
+        "${command:extension.vscode-wsl-workspaceFolder}": "${workspaceFolder}"
       }
     }
   ]
