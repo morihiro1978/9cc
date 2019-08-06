@@ -1,5 +1,6 @@
 /* BNF:
-   program    = stmt*
+   program    = deffunc*
+   deffunc    = ident "(" ((ident ",")* ident)? ")" "{" stmt* "}"
    stmt       = expr ";"
               | "{" stmt* "}"
               | "if" "(" expr ")" stmt ("else" stmt)?
@@ -435,6 +436,39 @@ static void func_add_param(Node *func, Node *param) {
     func->v.func.num_param++;
 }
 
+/* deffunc ノードを作成する */
+static Node *new_node_deffunc(const Token *tok) {
+    Node *node = calloc(1, sizeof(Node));
+
+    node->kind = ND_DEFFUNC;
+    node->v.deffunc.name = (char *)tok->str;
+    node->v.deffunc.len = tok->len;
+    return node;
+}
+
+/* deffunc ノードにパラメータを追加する */
+static void deffunc_add_param(Node *deffunc, Node *param) {
+    if (deffunc->kind != ND_DEFFUNC) {
+        error("deffuncノードではありません。");
+    }
+    if (param->kind != ND_LVAR) {
+        error("paramがND_LVARノードではありません。");
+    }
+
+    if (deffunc->v.deffunc.max_param == deffunc->v.deffunc.num_param) {
+        deffunc->v.deffunc.max_param += MAX_PARAM;
+        deffunc->v.deffunc.params
+            = (Node **)realloc(deffunc->v.deffunc.params,
+                               deffunc->v.deffunc.max_param * sizeof(Node));
+        if (deffunc->v.deffunc.params == NULL) {
+            error("deffuncノードを %d に拡張できません。",
+                  deffunc->v.deffunc.max_param);
+        }
+    }
+    deffunc->v.deffunc.params[deffunc->v.deffunc.num_param] = param;
+    deffunc->v.deffunc.num_param++;
+}
+
 /* パーサ: num */
 static Node *num(void) {
     return new_node_num(expect_number());
@@ -633,9 +667,8 @@ static Node *stmt(Node *pblock) {
         node = new_node_for(init, test, update, stmt(pblock));
     } else if (consume("{") == true) {
         Node *block = new_node_block(pblock);
-        pblock = block;
         while (consume("}") == false) {
-            block_add_node(block, stmt(pblock));
+            block_add_node(block, stmt(block));
         }
         return block;
     } else {
@@ -645,12 +678,46 @@ static Node *stmt(Node *pblock) {
     return node;
 }
 
+/* パーサ: deffunc */
+static Node *deffunc(void) {
+    Token *tok = consume_with_kind(TK_IDENT);
+    if (tok == NULL) {
+        error("関数定義ではありません。");
+    }
+    Node *deffunc = new_node_deffunc(tok);
+    Node *block = new_node_block(NULL);
+    deffunc->v.deffunc.block = block;
+
+    // parameter
+    expect("(");
+    if (consume(")") == false) {
+        while (1) {
+            deffunc_add_param(deffunc, term(block));
+            if (consume(")") == true) {
+                break;
+            } else {
+                expect(",");
+            }
+        }
+    }
+    if (deffunc->v.deffunc.max_param > MAX_PARAM) {
+        error("パラメータが %d 個以上設定されています。", MAX_PARAM);
+    }
+
+    // block
+    expect("{");
+    while (consume("}") == false) {
+        block_add_node(block, stmt(block));
+    }
+    return deffunc;
+}
+
 /* パーサ: program */
 static Node *program(void) {
     Node *global_block = new_node_block(NULL);
 
     while (eof() == false) {
-        block_add_node(global_block, stmt(global_block));
+        block_add_node(global_block, deffunc());
     }
     return global_block;
 }

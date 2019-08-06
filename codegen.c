@@ -251,6 +251,36 @@ static void gen_call_func(Node *node) {
 
 }
 
+/* 関数定義 */
+static void gen_define_func(Node *deffunc) {
+    // 関数名
+    printf("%.*s:\n", deffunc->v.deffunc.len, deffunc->v.deffunc.name);
+
+    // プロローグ
+    // 変数の領域を確保
+    comment("prologue\n");
+    printf("    push rbp\n");
+    printf("    mov rbp, rsp\n");
+#if 0
+    printf("    sub rsp, %d\n", deffunc->v.deffunc.block->v.block.total_local * 8);
+#else
+    for (int i = 0; i < deffunc->v.deffunc.block->v.block.total_local; i++) {
+        printf("    push 0xcc\n");
+    }
+#endif
+    printf("\n");
+
+    // ブロック内のコードを生成
+    gen(deffunc->v.deffunc.block);
+
+    // エピローグ
+    // 最後の式の結果が RAX に残っているので、それを返す
+    comment("epilogue\n");
+    printf("    mov rsp, rbp\n");
+    printf("    pop rbp\n");
+    printf("    ret\n");
+}
+
 /* ブロック */
 static void gen_block(Node *block) {
     if (block->v.block.num_code > 0) {
@@ -328,6 +358,9 @@ void gen(Node *node) {
         break;
     case ND_FUNC:
         gen_call_func(node);
+        break;
+    case ND_DEFFUNC:
+        gen_define_func(node);
         break;
     default:
         error("未定義のノードです。");

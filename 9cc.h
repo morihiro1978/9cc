@@ -31,23 +31,24 @@ struct Token {
 
 /* 抽象構文機のノードの種類 */
 typedef enum {
-    ND_ADD,     // +
-    ND_SUB,     // -
-    ND_MUL,     // *
-    ND_DIV,     // /
-    ND_EQ,      // ==
-    ND_NE,      // !=
-    ND_LT,      // <
-    ND_LE,      // <=
-    ND_NUM,     // 整数
-    ND_ASSIGN,  // 代入
-    ND_RETURN,  // return
-    ND_IF,      // if-else
-    ND_WHILE,   // while
-    ND_FOR,     // for
-    ND_LVAR,    // 変数
-    ND_FUNC,    // 関数
-    ND_BLOCK    // ブロック
+    ND_ADD,      // +
+    ND_SUB,      // -
+    ND_MUL,      // *
+    ND_DIV,      // /
+    ND_EQ,       // ==
+    ND_NE,       // !=
+    ND_LT,       // <
+    ND_LE,       // <=
+    ND_NUM,      // 整数
+    ND_ASSIGN,   // 代入
+    ND_RETURN,   // return
+    ND_IF,       // if-else
+    ND_WHILE,    // while
+    ND_FOR,      // for
+    ND_LVAR,     // 変数
+    ND_FUNC,     // 関数
+    ND_DEFFUNC,  // 関数定義
+    ND_BLOCK     // ブロック
 } NodeKind;
 
 typedef struct LVar LVar;
@@ -75,6 +76,15 @@ struct Node {
             int max_param;  // パラメータノードを格納できる最大数
             int num_param;  // パラメータ数
         } func;
+        // 関数定義
+        struct {
+            char *name;
+            int len;
+            Node **params;
+            int max_param;  // パラメータノードを格納できる最大数
+            int num_param;  // パラメータ数
+            Node *block;
+        } deffunc;
         // 1項演算子
         struct {
             Node *expr;
