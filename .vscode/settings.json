@@ -13,6 +13,7 @@
     "lbegin",
     "lbreak",
     "lelse",
+    "lret",
     "movzb",
     "noprefix",
     "sete",

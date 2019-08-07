@@ -4,6 +4,8 @@
 /* ラベルカウター */
 static int label_count = 0;
 
+static Node *cur_func = NULL;
+
 static void comment(const char *format, ...) {
     va_list ap;
     printf("# ");
@@ -142,9 +144,14 @@ static void gen_return(Node *node) {
     gen(node->v.op1.expr);
     comment("return\n");
     printf("    pop rax\n");
+    /*
     printf("    mov rsp, rbp\n");
     printf("    pop rbp\n");
     printf("    ret\n");
+     */
+    printf("    jmp .Lret_%.*s\n",
+           cur_func->v.deffunc.len,
+           cur_func->v.deffunc.name);
 }
 
 /* if */
@@ -225,12 +232,12 @@ static void gen_for(Node *node) {
 /* 関数呼び出し */
 static void gen_call_func(Node *node) {
     int i;
-    char *regs[] = {"rdi",
-                    "rsi",
-                    "rdx",
-                    "rcx",
-                    "r8",
-                    "r9"};  // 第1～6引数に使用するレジスタ
+    const char *regs[] = {"rdi",
+                          "rsi",
+                          "rdx",
+                          "rcx",
+                          "r8",
+                          "r9"};  // 第1～6引数に使用するレジスタ
 
     comment("func: %.*s\n", node->v.func.len, node->v.func.name);
     for (i = 0; i < node->v.func.num_param; i++) {
@@ -253,29 +260,44 @@ static void gen_call_func(Node *node) {
 
 /* 関数定義 */
 static void gen_define_func(Node *deffunc) {
+    int i;
+    const char *regs[] = {"rdi",
+                          "rsi",
+                          "rdx",
+                          "rcx",
+                          "r8",
+                          "r9"};  // 第1～6引数に使用するレジスタ
+
+    cur_func = deffunc;
+
     // 関数名
     printf("%.*s:\n", deffunc->v.deffunc.len, deffunc->v.deffunc.name);
+    printf("    nop\n");  // アセンブリデバッグでブレイクポイントを貼るためのnp
 
     // プロローグ
-    // 変数の領域を確保
     comment("prologue\n");
+
+    // レジスタを退避
     printf("    push rbp\n");
     printf("    mov rbp, rsp\n");
-#if 0
-    printf("    sub rsp, %d\n", deffunc->v.deffunc.block->v.block.total_local * 8);
-#else
-    for (int i = 0; i < deffunc->v.deffunc.block->v.block.total_local; i++) {
+
+    // パラメータを変数領域にセット
+    for (i = 0; i < deffunc->v.deffunc.num_param; i++) {
+        printf("    push %s\n", regs[i]);
+    }
+
+    // 変数の領域を確保
+    for (; i < deffunc->v.deffunc.block->v.block.total_local; i++) {
         printf("    push 0xcc\n");
     }
-#endif
     printf("\n");
 
     // ブロック内のコードを生成
     gen(deffunc->v.deffunc.block);
 
     // エピローグ
-    // 最後の式の結果が RAX に残っているので、それを返す
     comment("epilogue\n");
+    printf(".Lret_%.*s:\n", deffunc->v.deffunc.len, deffunc->v.deffunc.name);
     printf("    mov rsp, rbp\n");
     printf("    pop rbp\n");
     printf("    ret\n");
