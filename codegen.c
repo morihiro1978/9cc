@@ -240,12 +240,15 @@ static void gen_call_func(Node *node) {
         printf("    pop %s\n", regs[i]);
     }
     // 関数呼び出しのまえに、rspを16の倍数に整える
+    printf("    push r12\n");
     printf("    mov r12, rsp\n");
     printf("    and r12, 0xf\n");
     printf("    sub rsp, r12\n");
     printf("    call %.*s\n", node->v.func.len, node->v.func.name);
     printf("    add rsp, r12\n");
+    printf("    pop r12\n");
     printf("    push rax\n");
+
 }
 
 /* ブロック */
