@@ -68,6 +68,15 @@ static void print_token_list(const Token *head) {
     }
 }
 
+/* 文字が /[A-Za-z_]/ なら非0 を、違っていたら 0 を返す */
+static int is_alpha(int c) {
+    int ret = isalpha(c);
+    if (ret == 0) {
+        ret = c == '_';
+    }
+    return ret;
+}
+
 /* 文字が /[A-Za-z9-0_]/ なら非0 を、違っていたら 0 を返す */
 static int is_alnumubar(int c) {
     int ret = isalnum(c);
@@ -138,9 +147,9 @@ static int is_exp_reserved_as(const char *exp, const char *ident) {
 static int is_exp_variable(const char *exp) {
     int i = 0;
 
-    if (isalpha(exp[i]) != 0) {
+    if (is_alpha(exp[i]) != 0) {
         i++;
-        while (isalnum(exp[i]) != 0) {
+        while (is_alnumubar(exp[i]) != 0) {
             i++;
         }
     }
