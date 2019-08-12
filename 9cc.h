@@ -153,6 +153,29 @@ void error_at(const char *exp, char *fmt, ...);
 /* トークナイズする */
 void tokenize(char *exp);
 
+/* トークンが指定の記号なら true を返し、トークンを進める。
+   別の記号なら false を返す。
+ */
+bool consume(const char *op);
+
+/* トークンが指定の種類ならそのトークンを返し、トークンを進める。
+   違っていたら NULL を返す。
+*/
+Token *consume_with_kind(TokenKind kind);
+
+/* トークンが指定の記号なら、トークンを進める。
+   違っていたらパニックする。
+*/
+void expect(const char *op);
+
+/* トークンが数値ならそれを返し、トークンを進める。
+   違っていたらパニックする。
+ */
+int expect_number(void);
+
+/* EOFか？ */
+bool eof(void);
+
 /* パース */
 Node *parse(void);
 
