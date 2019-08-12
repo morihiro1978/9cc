@@ -133,5 +133,6 @@ try 34 "fib(n){ if(n==0){return 0;} if(n==1){return 1;} return fib(n-1) + fib(n-
 try 55 "fib(n){ if(n==0){return 0;} if(n==1){return 1;} return fib(n-1) + fib(n-2); } main(){ fib(10); }"
 try 0 "func_a(){ func0(); } main(){ func_a(); return 0; }"
 try 10 "f(){ return func1(1); } main(){a=0; for(_=0;_<10;_=_+1){ a=a+f(); func1(a); } return a;}"
+try 123 "main(){ x=123; y=&x; z=func1(*y); return z; }"
 
 echo OK

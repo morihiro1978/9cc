@@ -48,7 +48,9 @@ typedef enum {
     ND_LVAR,     // 変数
     ND_FUNC,     // 関数
     ND_DEFFUNC,  // 関数定義
-    ND_BLOCK     // ブロック
+    ND_BLOCK,    // ブロック
+    ND_ADDR,     // アドレス取得
+    ND_DEREF     // 参照外し
 } NodeKind;
 
 typedef struct LVar LVar;

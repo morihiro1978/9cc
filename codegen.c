@@ -255,7 +255,6 @@ static void gen_call_func(Node *node) {
     printf("    add rsp, r12\n");
     printf("    pop r12\n");
     printf("    push rax\n");
-
 }
 
 /* 関数定義 */
@@ -321,6 +320,22 @@ static void gen_block(Node *block) {
     }
 }
 
+/* アドレス取得 */
+static void gen_addr(Node *node) {
+    comment("&{var}\n");
+    gen_lvar_addr(node->v.op1.expr);
+}
+
+/* 参照外し */
+static void gen_deref(Node *node) {
+    comment("*{var} (1/2)\n");
+    gen(node->v.op1.expr);
+    comment("*{var} (2/2)\n");
+    printf("    pop rax\n");
+    printf("    mov rax, [rax]\n");
+    printf("    push rax\n");
+}
+
 /* 抽象構文木を下りながらコードを生成 */
 void gen(Node *node) {
     if (node == NULL) {
@@ -383,6 +398,12 @@ void gen(Node *node) {
         break;
     case ND_DEFFUNC:
         gen_define_func(node);
+        break;
+    case ND_ADDR:
+        gen_addr(node);
+        break;
+    case ND_DEREF:
+        gen_deref(node);
         break;
     default:
         error("未定義のノードです。");

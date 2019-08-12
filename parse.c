@@ -14,6 +14,7 @@
    add        = mul ("+" mul | "-" mul)*
    mul        = unary ("*" unary | "/" unary)*
    unary      = ("+" | "-")? term
+              | ("*" | "&") unary
    term       = num
               | ident ("(" ((expr ",")* expr)? ")")?
               | "(" expr ")"
@@ -115,6 +116,7 @@ static int is_exp_reserved(const char *exp) {
     case '+':  // fall down
     case '-':  // fall down
     case '*':  // fall down
+    case '&':  // fall down
     case '/':  // fall down
     case '(':  // fall down
     case ')':  // fall down
@@ -547,6 +549,10 @@ static Node *unary(Node *pblock) {
         return term(pblock);
     } else if (consume("-") == true) {
         return new_node_op2(ND_SUB, new_node_num(0), term(pblock));
+    } else if (consume("&") == true) {
+        return new_node_op1(ND_ADDR, unary(pblock));
+    } else if (consume("*") == true) {
+        return new_node_op1(ND_DEREF, unary(pblock));
     } else {
         return term(pblock);
     }
