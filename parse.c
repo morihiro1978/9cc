@@ -7,6 +7,7 @@
               | "while" "(" expr ")" stmt
               | "for" "(" expr? ";" expr? ";" expr? ")" stmt
               | return expr ";"
+              | "int" term ";"
    expr       = assign
    assign     = equality ("=" assign)?
    equality   = relational ("==" relational | "!=" relational)*
@@ -244,11 +245,8 @@ static Node *var(Node *pblock, const Token *tok) {
 
     LVar *var = block_find_local(pblock, tok);
     if (var == NULL) {
-        var = calloc(1, sizeof(LVar));
-        var->name = (char *)tok->str;
-        var->len = tok->len;
-        var->offset = (block_total_local(pblock) + 1) * 8;
-        block_add_local(pblock, var);
+        error_at(
+            tok->str, "変数 %.*s は宣言されていません", tok->len, tok->str);
     }
 
     node->kind = ND_LVAR;
@@ -394,6 +392,29 @@ static Node *expr(Node *pblock) {
     return assign(pblock);
 }
 
+/* int 型のローカル変数を宣言する */
+static void stmt_def_lvar_int(Node *pblock) {
+    Token *tok = consume_with_kind(TK_IDENT);
+    if (tok != NULL) {
+        LVar *var = block_find_local(pblock, tok);
+        if (var == NULL) {
+            var = calloc(1, sizeof(LVar));
+            var->name = (char *)tok->str;
+            var->len = tok->len;
+            var->offset = (block_total_local(pblock) + 1) * 8;
+            block_add_local(pblock, var);
+        } else {
+            error_at(tok->str,
+                     "変数 %.*s が多重定義されました。",
+                     tok->len,
+                     tok->str);
+        }
+    } else {
+        error("型の後に変数が定義されていません。");
+    }
+    expect(";");
+}
+
 /* パーサ: stmt */
 static Node *stmt(Node *pblock) {
     Node *node = NULL;
@@ -439,6 +460,8 @@ static Node *stmt(Node *pblock) {
             block_add_node(block, stmt(block));
         }
         return block;
+    } else if (consume_with_kind(TK_PTYPE_INT) != NULL) {
+        stmt_def_lvar_int(pblock);
     } else {
         node = expr(pblock);
         expect(";");

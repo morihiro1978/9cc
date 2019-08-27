@@ -8,15 +8,16 @@
 
 /* トークンの種類 */
 typedef enum {
-    TK_RESERVED,  // 記号
-    TK_RETURN,    // return
-    TK_IF,        // if
-    TK_ELSE,      // else
-    TK_WHILE,     // while
-    TK_FOR,       // for
-    TK_IDENT,     // 変数
-    TK_NUM,       // 整数
-    TK_EOF        // EOF
+    TK_RESERVED,   // 記号
+    TK_RETURN,     // return
+    TK_IF,         // if
+    TK_ELSE,       // else
+    TK_WHILE,      // while
+    TK_FOR,        // for
+    TK_IDENT,      // 変数
+    TK_NUM,        // 整数
+    TK_PTYPE_INT,  // 型
+    TK_EOF         // EOF
 } TokenKind;
 
 /* トークン */

@@ -120,6 +120,11 @@ void tokenize(char *exp) {
         else if ((len = is_exp_space(exp)) > 0) {
             exp += len;
         }
+        // 型
+        else if ((len = is_exp_reserved_as(exp, "int")) > 0) {
+            cur = new_token(TK_PTYPE_INT, exp, len, cur);
+            exp += len;
+        }
         // 予約語
         else if ((len = is_exp_reserved(exp)) > 0) {
             cur = new_token(TK_RESERVED, exp, len, cur);
