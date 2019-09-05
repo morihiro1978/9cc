@@ -54,3 +54,10 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Tag files
+GPATH
+GRTAGS
+GTAGS
+tags
+
