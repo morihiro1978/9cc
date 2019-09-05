@@ -122,7 +122,8 @@ void tokenize(char *exp) {
         }
         // 型
         else if ((len = is_exp_reserved_as(exp, "int")) > 0) {
-            cur = new_token(TK_PTYPE_INT, exp, len, cur);
+            cur = new_token(TK_TYPE, exp, len, cur);
+            cur->type = TY_INT;
             exp += len;
         }
         // 予約語

@@ -392,8 +392,8 @@ static Node *expr(Node *pblock) {
     return assign(pblock);
 }
 
-/* int 型のローカル変数を宣言する */
-static void stmt_def_lvar_int(Node *pblock) {
+/* ローカル変数を宣言する */
+static void stmt_def_lvar(Node *pblock, Type type) {
     Token *tok = consume_with_kind(TK_IDENT);
     if (tok != NULL) {
         LVar *var = block_find_local(pblock, tok);
@@ -417,6 +417,7 @@ static void stmt_def_lvar_int(Node *pblock) {
 
 /* パーサ: stmt */
 static Node *stmt(Node *pblock) {
+    Token *tok = NULL;
     Node *node = NULL;
     if (consume_with_kind(TK_RETURN) != NULL) {
         node = new_node_op1(ND_RETURN, expr(pblock));
@@ -460,8 +461,8 @@ static Node *stmt(Node *pblock) {
             block_add_node(block, stmt(block));
         }
         return block;
-    } else if (consume_with_kind(TK_PTYPE_INT) != NULL) {
-        stmt_def_lvar_int(pblock);
+    } else if ((tok = consume_with_kind(TK_TYPE)) != NULL) {
+        stmt_def_lvar(pblock, tok->type);
     } else {
         node = expr(pblock);
         expect(";");

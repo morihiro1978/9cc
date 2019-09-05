@@ -6,6 +6,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* 組み込み型 */
+typedef enum {
+    TY_INT,     // int
+} Type;
+
 /* トークンの種類 */
 typedef enum {
     TK_RESERVED,   // 記号
@@ -16,7 +21,7 @@ typedef enum {
     TK_FOR,        // for
     TK_IDENT,      // 変数
     TK_NUM,        // 整数
-    TK_PTYPE_INT,  // 型
+    TK_TYPE,       // 型
     TK_EOF         // EOF
 } TokenKind;
 
@@ -27,6 +32,7 @@ struct Token {
     const char *str;  // トークン文字列
     int len;          // トークンの長さ
     int num;          // 数値: kind が TK_NUM の場合
+    Type type;        // 型: kind が TK_TYPE の場合
     Token *next;      // リスト
 };
 
