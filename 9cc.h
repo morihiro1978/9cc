@@ -175,10 +175,10 @@ Token *consume_with_kind(TokenKind kind);
 */
 void expect(const char *op);
 
-/* トークンが数値ならそれを返し、トークンを進める。
+/* トークンが kind ならそれを返し、トークンを進める。
    違っていたらパニックする。
  */
-int expect_number(void);
+Token *expect_with_kind(TokenKind kind);
 
 /* EOFか？ */
 bool eof(void);

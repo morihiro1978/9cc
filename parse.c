@@ -236,7 +236,8 @@ static void deffunc_add_param(Node *deffunc, Node *param) {
 
 /* パーサ: num */
 static Node *num(void) {
-    return new_node_num(expect_number());
+    Token *tok = expect_with_kind(TK_NUM);
+    return new_node_num(tok->num);
 }
 
 /* パーサ: var */

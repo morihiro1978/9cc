@@ -208,16 +208,17 @@ void expect(const char *op) {
     }
 }
 
-/* トークンが数値ならそれを返し、トークンを進める。
+/* トークンが kind ならそれを返し、トークンを進める。
    違っていたらパニックする。
  */
-int expect_number(void) {
-    if (token->kind != TK_NUM) {
-        error_at(token->str, "数値ではありません");
+Token *expect_with_kind(TokenKind kind) {
+    if (token->kind != kind) {
+        const char *str[] = { "記号", "return", "if", "else", "while", "for", "変数", "整数", "型", "EOF" };
+        error_at(token->str, "%sではありません", str[kind]);
     }
-    int num = token->num;
+    Token *tok = token;
     token = token->next;
-    return num;
+    return tok;
 }
 
 /* EOFか？ */
