@@ -89,6 +89,7 @@ struct Node {
         struct {
             char *name;
             int len;
+            Type rettype;
             Node **params;
             int max_param;  // パラメータノードを格納できる最大数
             int num_param;  // パラメータ数

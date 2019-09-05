@@ -1,6 +1,6 @@
 /* BNF:
    program    = deffunc*
-   deffunc    = ident "(" ((ident ",")* ident)? ")" "{" stmt* "}"
+   deffunc    = "int" ident "(" ((ident ",")* ident)? ")" "{" stmt* "}"
    stmt       = expr ";"
               | "{" stmt* "}"
               | "if" "(" expr ")" stmt ("else" stmt)?
@@ -473,11 +473,11 @@ static Node *stmt(Node *pblock) {
 
 /* パーサ: deffunc */
 static Node *deffunc(void) {
-    Token *tok = consume_with_kind(TK_IDENT);
-    if (tok == NULL) {
-        error("関数定義ではありません。");
-    }
+    Token *type = expect_with_kind(TK_TYPE);
+    Token *tok = expect_with_kind(TK_IDENT);
     Node *deffunc = new_node_deffunc(tok);
+    deffunc->v.deffunc.rettype = type->type;
+
     Node *block = new_node_block(NULL);
     deffunc->v.deffunc.block = block;
 
