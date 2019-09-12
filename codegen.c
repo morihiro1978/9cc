@@ -14,6 +14,11 @@ static void comment(const char *format, ...) {
     va_end(ap);
 }
 
+/* NULL */
+static void gen_null(Node *node) {
+    printf("    push 0xcc\n");
+}
+
 /* 整数 */
 static void gen_num(Node *node) {
     comment("num: %d\n", node->v.num.val);
@@ -345,6 +350,9 @@ void gen(Node *node) {
     }
 
     switch (node->kind) {
+    case ND_NULL:
+        gen_null(node);
+        break;
     case ND_NUM:
         gen_num(node);
         break;

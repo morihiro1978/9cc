@@ -1,14 +1,15 @@
 /* BNF:
    program    = deffunc*
-   deffunc    = "int" ident "(" ((ident ",")* ident)? ")" "{" stmt* "}"
+   deffunc    = "int" ident "(" ((defvar ",")* defvar)? ")" "{" stmt* "}"
    stmt       = expr ";"
               | "{" stmt* "}"
               | "if" "(" expr ")" stmt ("else" stmt)?
               | "while" "(" expr ")" stmt
               | "for" "(" expr? ";" expr? ";" expr? ")" stmt
               | return expr ";"
-              | "int" term ";"
+              | defvar ";"
    expr       = assign
+   defvar     = "int" ident
    assign     = equality ("=" assign)?
    equality   = relational ("==" relational | "!=" relational)*
    relational = add ("<" add | "<=" add | ">" add | ">=" add)*
@@ -40,6 +41,14 @@ static const char *tokenKind_to_str(TokenKind kind) {
     default:
         return "Undefiend";
     }
+}
+
+/* NULL ノードを作成する */
+static Node *new_node_null(void) {
+    Node *node = calloc(1, sizeof(Node));
+
+    node->kind = ND_NULL;
+    return node;
 }
 
 /* 1項演算子のノードを作成する */
@@ -192,7 +201,7 @@ static void func_add_param(Node *func, Node *param) {
     if (func->v.func.max_param == func->v.func.num_param) {
         func->v.func.max_param += MAX_PARAM;
         func->v.func.params = (Node **)realloc(
-            func->v.func.params, func->v.func.max_param * sizeof(Node));
+            func->v.func.params, func->v.func.max_param * sizeof(Node*));
         if (func->v.func.params == NULL) {
             error("funcノードを %d に拡張できません。", func->v.func.max_param);
         }
@@ -212,25 +221,22 @@ static Node *new_node_deffunc(const Token *tok) {
 }
 
 /* deffunc ノードにパラメータを追加する */
-static void deffunc_add_param(Node *deffunc, Node *param) {
+static void deffunc_add_param(Node *deffunc, LVar *var) {
     if (deffunc->kind != ND_DEFFUNC) {
         error("deffuncノードではありません。");
-    }
-    if (param->kind != ND_LVAR) {
-        error("paramがND_LVARノードではありません。");
     }
 
     if (deffunc->v.deffunc.max_param == deffunc->v.deffunc.num_param) {
         deffunc->v.deffunc.max_param += MAX_PARAM;
         deffunc->v.deffunc.params
-            = (Node **)realloc(deffunc->v.deffunc.params,
-                               deffunc->v.deffunc.max_param * sizeof(Node));
+            = (LVar **)realloc(deffunc->v.deffunc.params,
+                               deffunc->v.deffunc.max_param * sizeof(LVar*));
         if (deffunc->v.deffunc.params == NULL) {
             error("deffuncノードを %d に拡張できません。",
                   deffunc->v.deffunc.max_param);
         }
     }
-    deffunc->v.deffunc.params[deffunc->v.deffunc.num_param] = param;
+    deffunc->v.deffunc.params[deffunc->v.deffunc.num_param] = var;
     deffunc->v.deffunc.num_param++;
 }
 
@@ -394,14 +400,16 @@ static Node *expr(Node *pblock) {
 }
 
 /* ローカル変数を宣言する */
-static void stmt_def_lvar(Node *pblock, Type type) {
+static LVar *defvar_lvar(Node *pblock, Type type) {
+    LVar *var = NULL;
     Token *tok = consume_with_kind(TK_IDENT);
     if (tok != NULL) {
-        LVar *var = block_find_local(pblock, tok);
+        var = block_find_local(pblock, tok);
         if (var == NULL) {
             var = calloc(1, sizeof(LVar));
             var->name = (char *)tok->str;
             var->len = tok->len;
+            var->type = type;
             var->offset = (block_total_local(pblock) + 1) * 8;
             block_add_local(pblock, var);
         } else {
@@ -413,7 +421,13 @@ static void stmt_def_lvar(Node *pblock, Type type) {
     } else {
         error("型の後に変数が定義されていません。");
     }
-    expect(";");
+    return var;
+}
+
+/* パーサ: defvar */
+static LVar *defvar(Node *pblock) {
+    Token *tok = expect_with_kind(TK_TYPE);
+    return defvar_lvar(pblock, tok->type);
 }
 
 /* パーサ: stmt */
@@ -462,8 +476,10 @@ static Node *stmt(Node *pblock) {
             block_add_node(block, stmt(block));
         }
         return block;
-    } else if ((tok = consume_with_kind(TK_TYPE)) != NULL) {
-        stmt_def_lvar(pblock, tok->type);
+    } else if (peek()->kind == TK_TYPE) {
+        (void)defvar(pblock);
+        node = new_node_null();
+        expect(";");
     } else {
         node = expr(pblock);
         expect(";");
@@ -485,7 +501,7 @@ static Node *deffunc(void) {
     expect("(");
     if (consume(")") == false) {
         while (1) {
-            deffunc_add_param(deffunc, term(block));
+            deffunc_add_param(deffunc, defvar(block));
             if (consume(")") == true) {
                 break;
             } else {

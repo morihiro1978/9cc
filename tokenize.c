@@ -221,6 +221,12 @@ Token *expect_with_kind(TokenKind kind) {
     return tok;
 }
 
+/* トークンを 1 つだけ先読みする。
+ */
+Token *peek(void) {
+    return token;
+}
+
 /* EOFか？ */
 bool eof(void) {
     if (token->kind != TK_EOF) {

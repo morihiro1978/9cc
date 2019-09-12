@@ -38,6 +38,7 @@ struct Token {
 
 /* 抽象構文機のノードの種類 */
 typedef enum {
+    ND_NULL,     // NULL
     ND_ADD,      // +
     ND_SUB,      // -
     ND_MUL,      // *
@@ -90,7 +91,7 @@ struct Node {
             char *name;
             int len;
             Type rettype;
-            Node **params;
+            LVar **params;
             int max_param;  // パラメータノードを格納できる最大数
             int num_param;  // パラメータ数
             Node *block;
@@ -139,6 +140,7 @@ struct Node {
 struct LVar {
     char *name;  // 変数の名前
     int len;     // 名前の長さ
+    Type type;   // 型
     int offset;  // RBPからのオフセット
     LVar *next;  // 次の変数かNULL
 };
@@ -180,6 +182,10 @@ void expect(const char *op);
    違っていたらパニックする。
  */
 Token *expect_with_kind(TokenKind kind);
+
+/* トークンを 1 つだけ先読みする。
+ */
+Token *peek(void);
 
 /* EOFか？ */
 bool eof(void);
