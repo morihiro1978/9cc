@@ -1,6 +1,6 @@
 /* BNF:
    program    = deffunc*
-   deffunc    = "int" ident "(" ((defvar ",")* defvar)? ")" "{" stmt* "}"
+   deffunc    = "int" ("*")? ident "(" ((defvar ",")* defvar)? ")" "{" stmt* "}"
    stmt       = expr ";"
               | "{" stmt* "}"
               | "if" "(" expr ")" stmt ("else" stmt)?
@@ -9,7 +9,7 @@
               | return expr ";"
               | defvar ";"
    expr       = assign
-   defvar     = "int" ident
+   defvar     = "int" ("*")? ident
    assign     = equality ("=" assign)?
    equality   = relational ("==" relational | "!=" relational)*
    relational = add ("<" add | "<=" add | ">" add | ">=" add)*
@@ -201,7 +201,7 @@ static void func_add_param(Node *func, Node *param) {
     if (func->v.func.max_param == func->v.func.num_param) {
         func->v.func.max_param += MAX_PARAM;
         func->v.func.params = (Node **)realloc(
-            func->v.func.params, func->v.func.max_param * sizeof(Node*));
+            func->v.func.params, func->v.func.max_param * sizeof(Node *));
         if (func->v.func.params == NULL) {
             error("funcノードを %d に拡張できません。", func->v.func.max_param);
         }
@@ -230,7 +230,7 @@ static void deffunc_add_param(Node *deffunc, LVar *var) {
         deffunc->v.deffunc.max_param += MAX_PARAM;
         deffunc->v.deffunc.params
             = (LVar **)realloc(deffunc->v.deffunc.params,
-                               deffunc->v.deffunc.max_param * sizeof(LVar*));
+                               deffunc->v.deffunc.max_param * sizeof(LVar *));
         if (deffunc->v.deffunc.params == NULL) {
             error("deffuncノードを %d に拡張できません。",
                   deffunc->v.deffunc.max_param);
@@ -399,9 +399,41 @@ static Node *expr(Node *pblock) {
     return assign(pblock);
 }
 
+/* Get lvar type */
+static Type *defvar_get_type(void) {
+    Token *ptype = NULL;
+    Type *type = NULL;
+    Type **ptr_to = &type;
+
+    ptype = expect_with_kind(TK_TYPE);
+
+    // pointer type
+    while (1) {
+        Token *tok = peek();
+        if ((tok->kind == TK_RESERVED) && (tok->len == 1)
+            && (tok->str[0] == '*')) {
+            (void)consume_with_kind(TK_RESERVED);  // throw away
+            *ptr_to = calloc(1, sizeof(Type));
+            (*ptr_to)->ty = TY_PTR;
+            (*ptr_to)->ptr_to = NULL;
+            ptr_to = &((*ptr_to)->ptr_to);
+        } else {
+            break;
+        }
+    }
+
+    // primitive type
+    *ptr_to = calloc(1, sizeof(Type));
+    (*ptr_to)->ty = ptype->type;
+
+    return type;
+}
+
 /* ローカル変数を宣言する */
-static LVar *defvar_lvar(Node *pblock, Type type) {
+static LVar *defvar_lvar(Node *pblock, Type *type) {
     LVar *var = NULL;
+
+    // variable name
     Token *tok = consume_with_kind(TK_IDENT);
     if (tok != NULL) {
         var = block_find_local(pblock, tok);
@@ -426,8 +458,8 @@ static LVar *defvar_lvar(Node *pblock, Type type) {
 
 /* パーサ: defvar */
 static LVar *defvar(Node *pblock) {
-    Token *tok = expect_with_kind(TK_TYPE);
-    return defvar_lvar(pblock, tok->type);
+    Type *type = defvar_get_type();
+    return defvar_lvar(pblock, type);
 }
 
 /* パーサ: stmt */
@@ -489,10 +521,11 @@ static Node *stmt(Node *pblock) {
 
 /* パーサ: deffunc */
 static Node *deffunc(void) {
-    Token *type = expect_with_kind(TK_TYPE);
+    Type *type = defvar_get_type();
     Token *tok = expect_with_kind(TK_IDENT);
     Node *deffunc = new_node_deffunc(tok);
-    deffunc->v.deffunc.rettype = type->type;
+
+    deffunc->v.deffunc.rettype = type;
 
     Node *block = new_node_block(NULL);
     deffunc->v.deffunc.block = block;

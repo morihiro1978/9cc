@@ -134,5 +134,6 @@ try 55 "int fib(int n){ if(n==0){return 0;} if(n==1){return 1;} return fib(n-1) 
 try 0 "int func_a(){ func0(); } int main(){ func_a(); return 0; }"
 try 10 "int f(){ return func1(1); } int main(){int a; int i; a=0; for(i=0;i<10;i=i+1){ a=a+f(); func1(a); } return a;}"
 try 123 "int main(){ int x; int y; int z; x=123; y=&x; z=func1(*y); return z; }"
+try 123 "int main(){ int x; int *y; y=&x; *y=123; return x; }"
 
 echo OK

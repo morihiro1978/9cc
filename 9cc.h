@@ -8,21 +8,28 @@
 
 /* 組み込み型 */
 typedef enum {
-    TY_INT,     // int
-} Type;
+    TY_INT,  // int
+    TY_PTR   // pointer
+} Ptype;
+
+typedef struct Type Type;
+struct Type {
+    Ptype ty;
+    Type *ptr_to;
+};
 
 /* トークンの種類 */
 typedef enum {
-    TK_RESERVED,   // 記号
-    TK_RETURN,     // return
-    TK_IF,         // if
-    TK_ELSE,       // else
-    TK_WHILE,      // while
-    TK_FOR,        // for
-    TK_IDENT,      // 変数
-    TK_NUM,        // 整数
-    TK_TYPE,       // 型
-    TK_EOF         // EOF
+    TK_RESERVED,  // 記号
+    TK_RETURN,    // return
+    TK_IF,        // if
+    TK_ELSE,      // else
+    TK_WHILE,     // while
+    TK_FOR,       // for
+    TK_IDENT,     // 変数
+    TK_NUM,       // 整数
+    TK_TYPE,      // 型
+    TK_EOF        // EOF
 } TokenKind;
 
 /* トークン */
@@ -32,7 +39,7 @@ struct Token {
     const char *str;  // トークン文字列
     int len;          // トークンの長さ
     int num;          // 数値: kind が TK_NUM の場合
-    Type type;        // 型: kind が TK_TYPE の場合
+    Ptype type;        // 型: kind が TK_TYPE の場合
     Token *next;      // リスト
 };
 
@@ -90,7 +97,7 @@ struct Node {
         struct {
             char *name;
             int len;
-            Type rettype;
+            Type *rettype;
             LVar **params;
             int max_param;  // パラメータノードを格納できる最大数
             int num_param;  // パラメータ数
@@ -140,7 +147,7 @@ struct Node {
 struct LVar {
     char *name;  // 変数の名前
     int len;     // 名前の長さ
-    Type type;   // 型
+    Type *type;  // 型
     int offset;  // RBPからのオフセット
     LVar *next;  // 次の変数かNULL
 };
